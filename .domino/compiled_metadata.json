@@ -1,101 +1,96 @@
 {
-    "ExampleSineWavePiece": {
-        "name": "ExampleSineWavePiece",
-        "dependency": {
-            "dockerfile": "Dockerfile_1",
-            "requirements_file": null
-        },
-        "tags": [
-            "Example"
-        ],
-        "style": {
-            "node_label": "Example Sine Piece",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:database",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "This is an example of a piece that uses Dockerfile for dependencies.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 512
-            }
-        },
-        "input_schema": {
-            "description": "Sleep Piece Input Model",
-            "properties": {
-                "frequency": {
-                    "default": 5,
-                    "description": "Frequency of the sine wave in Hz",
-                    "title": "Frequency",
-                    "type": "integer"
-                },
-                "duration": {
-                    "default": 1,
-                    "description": "Duration of the sine wave signal in seconds",
-                    "title": "Duration",
-                    "type": "integer"
-                },
-                "sample_rate": {
-                    "default": 1000,
-                    "description": "Sample rate of the sine wave signal.",
-                    "title": "Sample Rate",
-                    "type": "integer"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "description": "Sleep Piece Output Model",
-            "properties": {
-                "message": {
-                    "description": "Sleep piece executed",
-                    "title": "Message",
-                    "type": "string"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ExampleSineWavePiece"
-    },
-    "ExampleSleepPiece": {
-        "name": "ExampleSleepPiece",
+    "PVOUTErrorCorrectionModelTrainPiece": {
+        "name": "PVOUTErrorCorrectionModelTrainPiece",
         "dependency": {
             "dockerfile": null,
             "requirements_file": "requirements_0.txt"
         },
         "tags": [
-            "Example"
+            "Template",
+            "Train",
+            "PVOUT",
+            "ErrorCorrection"
         ],
         "style": {
-            "node_label": "Example Sleep Piece",
+            "node_label": "Train PVOUT Error Correction Model",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:database",
+            "icon_class_name": "fa-solid:sliders",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "This is an example of a simple Domino Piece that sleep for N seconds",
+        "description": "Template piece for training a PVOUT error-correction model.",
+        "container_resources": {
+            "requests": {
+                "cpu": 200,
+                "memory": 256
+            },
+            "limits": {
+                "cpu": 1000,
+                "memory": 2048
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., training dataset URI, correction targets, hyperparameters).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., trained corrector URI, evaluation metrics).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTErrorCorrectionModelTrainPiece"
+    },
+    "FeatureDerivationPiece": {
+        "name": "FeatureDerivationPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Features",
+            "FeatureEngineering"
+        ],
+        "style": {
+            "node_label": "Feature Derivation",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:wand-magic-sparkles",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for deriving features (time-series, lag, rolling stats) from preprocessed smart-grid data.",
         "container_resources": {
             "requests": {
                 "cpu": 100,
@@ -107,25 +102,27 @@
             }
         },
         "input_schema": {
-            "description": "Sleep Piece Input Model",
             "properties": {
-                "sleep_time": {
-                    "default": 1,
-                    "description": "Number of seconds to sleep",
-                    "title": "Sleep Time",
-                    "type": "number"
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., preprocessed dataset URI, feature config).",
+                    "title": "Payload",
+                    "type": "object"
                 }
             },
             "title": "InputModel",
             "type": "object"
         },
         "output_schema": {
-            "description": "Sleep Piece Output Model",
             "properties": {
                 "message": {
-                    "description": "Sleep piece executed",
+                    "description": "Human-readable status message.",
                     "title": "Message",
                     "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., feature matrix URI, feature list).",
+                    "title": "Artifacts",
+                    "type": "object"
                 }
             },
             "required": [
@@ -135,6 +132,544 @@
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ExampleSleepPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/FeatureDerivationPiece"
+    },
+    "DataPreprocessingPiece": {
+        "name": "DataPreprocessingPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Data",
+            "Preprocessing"
+        ],
+        "style": {
+            "node_label": "Data Preprocessing",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:filter",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for cleaning, validating, and preprocessing input data prior to feature engineering or training.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., raw dataset URI, schema, cleaning rules).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., cleaned dataset URI, dropped rows stats).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataPreprocessingPiece"
+    },
+    "EvaluateMLModelPiece": {
+        "name": "EvaluateMLModelPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Evaluation"
+        ],
+        "style": {
+            "node_label": "Evaluate ML Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:clipboard-check",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 1024
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., model URI, validation dataset URI, metric configuration).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., metrics JSON, plots, report URI).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
+    },
+    "ElectricityPricePredictionModelTrainPiece": {
+        "name": "ElectricityPricePredictionModelTrainPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Train",
+            "ElectricityPrice",
+            "Prediction"
+        ],
+        "style": {
+            "node_label": "Train Electricity Price Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:chart-line",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for training an electricity price prediction model.",
+        "container_resources": {
+            "requests": {
+                "cpu": 200,
+                "memory": 256
+            },
+            "limits": {
+                "cpu": 1000,
+                "memory": 2048
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., training dataset URI, market features, hyperparameters).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., trained model URI, backtest metrics).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ElectricityPricePredictionModelTrainPiece"
+    },
+    "PVOUTPredictionModelTrainPiece": {
+        "name": "PVOUTPredictionModelTrainPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Train",
+            "PVOUT",
+            "Prediction"
+        ],
+        "style": {
+            "node_label": "Train PVOUT Prediction Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:brain",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for training a PVOUT prediction model.",
+        "container_resources": {
+            "requests": {
+                "cpu": 200,
+                "memory": 256
+            },
+            "limits": {
+                "cpu": 1000,
+                "memory": 2048
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., training dataset URI, hyperparameters, feature list).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., trained model URI, training metrics).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTPredictionModelTrainPiece"
+    },
+    "ExplainablePredictionPiece": {
+        "name": "ExplainablePredictionPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Explainability"
+        ],
+        "style": {
+            "node_label": "Explainable Prediction",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:magnifying-glass-chart",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for generating prediction explanations (e.g., feature attributions) alongside inference results.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 1024
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., model URI, predictions URI, features URI, explainer config).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., explanation report URI, attribution arrays).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ExplainablePredictionPiece"
+    },
+    "ModelDeciderPiece": {
+        "name": "ModelDeciderPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Routing"
+        ],
+        "style": {
+            "node_label": "Model Decider",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:code-branch",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for selecting a model/version based on context, data availability, or policies.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., problem type, horizon, available models, constraints).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., selected model id/version, decision rationale).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ModelDeciderPiece"
+    },
+    "InferencePiece": {
+        "name": "InferencePiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Inference"
+        ],
+        "style": {
+            "node_label": "Inference",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:bolt",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for running inference using a selected model on prepared features.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., model URI, features URI, inference parameters).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., predictions URI, metrics, logs).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
+    },
+    "DataNormalizationPiece": {
+        "name": "DataNormalizationPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Data",
+            "Normalization"
+        ],
+        "style": {
+            "node_label": "Data Normalization",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:scale-balanced",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for normalizing raw smart-grid data into a consistent scale and schema.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Arbitrary inputs (e.g., dataframe metadata, file paths/URIs, column mappings).",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., normalized dataset URI, fitted scaler params).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataNormalizationPiece"
     }
 }
