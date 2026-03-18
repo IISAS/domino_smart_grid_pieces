@@ -1,0 +1,27 @@
+{
+  "name": "ElectricityPricePredictionModelTrainPiece",
+  "description": "Template piece for training an electricity price prediction model.",
+  "dependency": {
+    "requirements_file": "requirements_0.txt"
+  },
+  "container_resources": {
+    "requests": {
+      "cpu": 200,
+      "memory": 256
+    },
+    "limits": {
+      "cpu": 1000,
+      "memory": 2048
+    }
+  },
+  "tags": [
+    "Template",
+    "Train",
+    "ElectricityPrice",
+    "Prediction"
+  ],
+  "style": {
+    "node_label": "Train Electricity Price Model",
+    "icon_class_name": "fa-solid:chart-line"
+  }
+}

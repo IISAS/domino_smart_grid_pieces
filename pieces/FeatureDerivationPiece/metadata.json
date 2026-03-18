@@ -1,0 +1,26 @@
+{
+  "name": "FeatureDerivationPiece",
+  "description": "Template piece for deriving features (time-series, lag, rolling stats) from preprocessed smart-grid data.",
+  "dependency": {
+    "requirements_file": "requirements_0.txt"
+  },
+  "container_resources": {
+    "requests": {
+      "cpu": 100,
+      "memory": 128
+    },
+    "limits": {
+      "cpu": 500,
+      "memory": 512
+    }
+  },
+  "tags": [
+    "Template",
+    "Features",
+    "FeatureEngineering"
+  ],
+  "style": {
+    "node_label": "Feature Derivation",
+    "icon_class_name": "fa-solid:wand-magic-sparkles"
+  }
+}
