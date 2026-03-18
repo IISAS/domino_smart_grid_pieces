@@ -4,7 +4,11 @@ from pydantic import BaseModel, Field
 class InputModel(BaseModel):
     payload: dict = Field(
         default_factory=dict,
-        description="Arbitrary inputs (e.g., dataframe metadata, file paths/URIs, column mappings).",
+        description=(
+            "Arbitrary inputs. For DataNormalizationPiece, expected keys include: "
+            "`dataframe` (dataframe-like object), `type` (normalization type), and optional "
+            "`features` (list of column names to normalize)."
+        ),
     )
 
 
