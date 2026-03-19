@@ -1,7 +1,6 @@
 from domino.base_piece import BasePiece
 
 from .models import InputModel, OutputModel
-from .utils.Normalizer import Normalizations
 from .utils.modes import preprocess_correction, preprocess_prediction
 
 
@@ -25,11 +24,11 @@ class DataPreprocessingPiece(BasePiece):
             )
 
         if preprocessing_option == "prediction":
-            result = preprocess_prediction(payload, Normalizations)
+            result = preprocess_prediction(payload)
             return OutputModel(message=result["message"], artifacts=result["artifacts"])
 
         if preprocessing_option == "correction":
-            result = preprocess_correction(payload, Normalizations)
+            result = preprocess_correction(payload)
             return OutputModel(message=result["message"], artifacts=result["artifacts"])
 
         raise ValueError(

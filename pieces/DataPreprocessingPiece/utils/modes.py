@@ -1,4 +1,4 @@
-def preprocess_prediction(payload, Normalizations):
+def preprocess_prediction(payload):
     import os
     import pandas as pd  # type: ignore
 
@@ -11,11 +11,6 @@ def preprocess_prediction(payload, Normalizations):
     flag_each_day_enabled = bool(payload.get("flag_each_day", False))
     preprocessor_features = payload["preprocessor_features"]
     keep_datetime = bool(payload.get("keep_datetime", False))
-    normalizations_cfg = payload.get("normalizations") or {}
-
-    normalizations_name = normalizations_cfg.get("name")
-    normalizations_features = normalizations_cfg.get("normalization_features")
-    normalizations = Normalizations()
 
     if df is None:
         if not data_path:
@@ -36,11 +31,6 @@ def preprocess_prediction(payload, Normalizations):
         data = flag_each_day(data)
 
     data = preprocess_solargis_data(data)
-
-    if normalizations_name is not None:
-        data = normalizations.normalize(
-            data, normalizations_name, normalizations_features
-        )
 
     if save_data_path:
         os.makedirs(os.path.dirname(save_data_path), exist_ok=True)
@@ -63,7 +53,7 @@ def preprocess_prediction(payload, Normalizations):
     }
 
 
-def preprocess_correction(payload, Normalizations):
+def preprocess_correction(payload):
     import os
     import pandas as pd  # type: ignore
     from sklearn.model_selection import train_test_split  # type: ignore

@@ -8,7 +8,6 @@ Pieces for smart grid PVOUT prediction, PVOUT error correction, and electricity 
 
 - **DataNormalizationPiece**
 - **DataPreprocessingPiece**
-- **FeatureDerivationPiece**
 - **ModelDeciderPiece**
 - **InferencePiece**
 - **PVOUTPredictionModelTrainPiece**
