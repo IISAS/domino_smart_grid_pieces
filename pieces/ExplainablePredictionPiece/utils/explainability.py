@@ -198,10 +198,9 @@ class ExplainableModule:
                         else base_value
                     ),
                 }
-            except Exception as e:
+            except Exception:
                 # Fall back to KernelExplainer
-                use_tree = False
-                tree_error = str(e)
+                tree_error = "TreeExplainer failed; falling back to KernelExplainer"
         else:
             tree_error = None
 
