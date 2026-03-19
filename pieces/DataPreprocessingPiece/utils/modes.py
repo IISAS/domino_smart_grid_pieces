@@ -1,0 +1,183 @@
+def preprocess_prediction(payload, Normalizations):
+    import os
+    import pandas as pd  # type: ignore
+
+    from .preprocessor_utils import flag_each_day, preprocess_solargis_data
+    from .serialization import to_jsonable_df
+
+    df = payload.get("dataframe") or payload.get("X") or payload.get("data")
+    data_path = payload.get("data_path")
+    save_data_path = payload.get("save_data_path")
+    flag_each_day_enabled = bool(payload.get("flag_each_day", False))
+    preprocessor_features = payload["preprocessor_features"]
+    keep_datetime = bool(payload.get("keep_datetime", False))
+    normalizations_cfg = payload.get("normalizations") or {}
+
+    normalizations_name = normalizations_cfg.get("name")
+    normalizations_features = normalizations_cfg.get("normalization_features")
+    normalizations = Normalizations()
+
+    if df is None:
+        if not data_path:
+            raise ValueError(
+                "preprocessing_option='prediction' requires either `payload['dataframe']` "
+                "or `payload['data_path']`."
+            )
+        df = pd.read_csv(
+            data_path,
+            sep=";",
+            skiprows=58,
+            parse_dates={"datetime": ["Date", "Time"]},
+            dayfirst=True,
+        )
+
+    data = df
+    if flag_each_day_enabled:
+        data = flag_each_day(data)
+
+    data = preprocess_solargis_data(data)
+
+    if normalizations_name is not None:
+        data = normalizations.normalize(
+            data, normalizations_name, normalizations_features
+        )
+
+    if save_data_path:
+        os.makedirs(os.path.dirname(save_data_path), exist_ok=True)
+        data.to_csv(save_data_path, index=False)
+
+    features = list(preprocessor_features)
+    if keep_datetime and "datetime" in data.columns and "datetime" not in features:
+        features = ["datetime"] + features
+
+    X = data[features]
+    y = data["PVOUT"]
+
+    return {
+        "message": "DataPreprocessingPiece executed (prediction).",
+        "artifacts": {
+            "X": to_jsonable_df(X),
+            "y": to_jsonable_df(y.to_frame()),
+            "features": features,
+        },
+    }
+
+
+def preprocess_correction(payload, Normalizations):
+    import os
+    import pandas as pd  # type: ignore
+    from sklearn.model_selection import train_test_split  # type: ignore
+
+    from .preprocessor_utils import flag_each_day, preprocess_solargis_data
+    from .serialization import to_jsonable_df
+
+    df = payload.get("dataframe") or payload.get("X") or payload.get("data")
+    data_path = payload.get("data_path")
+    save_data_path = payload.get("save_data_path")
+    flag_each_day_enabled = bool(payload.get("flag_each_day", False))
+    preprocessor_features = payload["preprocessor_features"]
+
+    test_size = payload.get("test_size")  # optional
+    load_all_data = bool(payload.get("load_all_data", False))
+
+    def _load_single(path: str):
+        # Special handling for PVOD-derived Solargis-like CSV.
+        if os.path.basename(path).startswith("error_correction_pvod"):
+            data = pd.read_csv(path)
+            if "datetime" in data.columns:
+                data["datetime"] = pd.to_datetime(data["datetime"])
+            if flag_each_day_enabled:
+                data = flag_each_day(data)
+            return data
+
+        data = pd.read_csv(
+            path,
+            sep=";",
+            skiprows=58,
+            dayfirst=True,
+        )
+        if "Date" in data.columns and "Time" in data.columns:
+            data["datetime"] = pd.to_datetime(
+                data["Date"].astype(str) + " " + data["Time"].astype(str),
+                dayfirst=True,
+            )
+        if flag_each_day_enabled:
+            data = flag_each_day(data)
+        return data
+
+    if df is None:
+        if not data_path:
+            raise ValueError(
+                "preprocessing_option='correction' requires either `payload['dataframe']` "
+                "or `payload['data_path']`."
+            )
+
+        if load_all_data:
+            data = pd.DataFrame()
+            for file in os.listdir(data_path):
+                part = _load_single(os.path.join(data_path, file))
+                data = pd.concat([data, part])
+        else:
+            data = _load_single(data_path)
+    else:
+        data = df
+
+    # Separate true sequence one predictions from the rest
+    true_sequence_one = data[data["pred_sequence_id"] == 1]
+    pred_sequence_one = data[data["pred_sequence_id"] != 1]
+
+    # Insert the true pvout into the pred sequence one dataframe.
+    true_pvout_map = true_sequence_one.set_index("datetime")["PVOUT"].to_dict()
+    pred_sequence_one = pred_sequence_one.copy()
+    pred_sequence_one["true_pvout"] = pred_sequence_one["datetime"].map(true_pvout_map)
+    pred_sequence_one = pred_sequence_one.dropna(subset=["true_pvout"])
+
+    # Preprocess data
+    pred_sequence_one = preprocess_solargis_data(pred_sequence_one)
+    true_sequence_one = preprocess_solargis_data(true_sequence_one)
+
+    if save_data_path:
+        # Derive two output paths: *_pred.csv and *_true.csv
+        root, ext = os.path.splitext(save_data_path)
+        os.makedirs(os.path.dirname(save_data_path), exist_ok=True)
+        pred_sequence_one.to_csv(f"{root}_pred{ext}", index=False)
+        true_sequence_one.to_csv(f"{root}_true{ext}", index=False)
+
+    features = list(preprocessor_features)
+    if "datetime" not in features:
+        features.append("datetime")
+    if (
+        "pred_sequence_id" in pred_sequence_one.columns
+        and "pred_sequence_id" not in features
+    ):
+        features.append("pred_sequence_id")
+
+    X = pred_sequence_one[features]
+    y_pred = pred_sequence_one["PVOUT"]
+    y_true = pred_sequence_one["true_pvout"]
+
+    if test_size is not None:
+        x_train, x_test, y_pred_train, y_pred_test, y_true_train, y_true_test = (
+            train_test_split(X, y_pred, y_true, test_size=test_size)
+        )
+        artifacts = {
+            "true_sequence_one": to_jsonable_df(true_sequence_one),
+            "x_train": to_jsonable_df(x_train),
+            "x_test": to_jsonable_df(x_test),
+            "y_pred_train": to_jsonable_df(y_pred_train.to_frame()),
+            "y_pred_test": to_jsonable_df(y_pred_test.to_frame()),
+            "y_true_train": to_jsonable_df(y_true_train.to_frame()),
+            "y_true_test": to_jsonable_df(y_true_test.to_frame()),
+        }
+    else:
+        artifacts = {
+            "true_sequence_one": to_jsonable_df(true_sequence_one),
+            "X": to_jsonable_df(X),
+            "y_pred": to_jsonable_df(y_pred.to_frame()),
+            "y_true": to_jsonable_df(y_true.to_frame()),
+        }
+
+    return {
+        "message": "DataPreprocessingPiece executed (correction).",
+        "artifacts": artifacts,
+    }
