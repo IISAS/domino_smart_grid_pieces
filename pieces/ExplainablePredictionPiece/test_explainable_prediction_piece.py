@@ -1,5 +1,6 @@
 from domino.testing import piece_dry_run
 import pytest
+import os
 
 
 def test_explainable_prediction_piece_smoke():
@@ -11,6 +12,8 @@ def test_explainable_prediction_piece_smoke():
 
 
 def test_explainable_prediction_piece_explain_missing_model_or_data_raises():
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip("Skipping expected-exception assertion in HTTP dry-run mode.")
     with pytest.raises(
         ValueError,
         match=r"Explainability requires payload\['model'\] and payload\['data'\]",

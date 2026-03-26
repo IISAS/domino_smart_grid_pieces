@@ -1,4 +1,6 @@
 from domino.testing import piece_dry_run
+import os
+import pytest
 
 
 def test_data_normalization_piece_smoke():
@@ -10,11 +12,15 @@ def test_data_normalization_piece_smoke():
 
 
 def test_data_normalization_piece_z_score():
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "z_score unit test relies on in-process dataframe-like object; "
+            "HTTP dry-run mode only supports JSON payloads."
+        )
+
     try:
         import numpy as np
     except ModuleNotFoundError:
-        import pytest
-
         pytest.skip("numpy is required for the z_score normalization test")
 
     class FakeDataFrame:

@@ -1,4 +1,5 @@
 import csv
+import os
 from pathlib import Path
 
 import pytest
@@ -46,6 +47,11 @@ def test_pvout_prediction_model_train_piece_smoke():
 def test_pvout_prediction_model_train_piece_all_models(
     model_type: str, required_modules: list[str], extra_model_params: dict
 ):
+    if model_type == "tabpfn_regressor_model" and os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Skipping TabPFN in CI HTTP dry-run mode (gated model/auth dependency)."
+        )
+
     for module_name in required_modules:
         try:
             __import__(module_name)

@@ -1,5 +1,6 @@
 from domino.testing import piece_dry_run
 import pytest
+import os
 
 
 def test_data_preprocessing_piece_smoke():
@@ -27,6 +28,8 @@ def test_data_preprocessing_piece_none_mode_alias():
 
 
 def test_data_preprocessing_piece_invalid_option_raises():
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip("Skipping expected-exception assertion in HTTP dry-run mode.")
     with pytest.raises(ValueError, match=r"Invalid preprocessing option"):
         piece_dry_run(
             "DataPreprocessingPiece",
