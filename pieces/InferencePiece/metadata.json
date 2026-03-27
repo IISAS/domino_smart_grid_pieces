@@ -1,8 +1,8 @@
 {
   "name": "InferencePiece",
-  "description": "Template piece for running inference using a selected model on prepared features.",
+  "description": "Runs inference on prepared features: pvout_correction or price_ahead (base + model correction).",
   "dependency": {
-    "requirements_file": "requirements_0.txt"
+    "requirements_file": "requirements_1.txt"
   },
   "container_resources": {
     "requests": {

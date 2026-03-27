@@ -5,6 +5,9 @@ __pycache__/
 .DS_Store
 dry_run_results/
 
+# Local pip install target / vendored deps (not part of source control)
+.vendor/
+
 # C extensions
 *.so
 

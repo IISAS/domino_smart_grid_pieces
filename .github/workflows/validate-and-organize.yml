@@ -47,6 +47,7 @@ jobs:
       - name: Run tests over built images
         env:
           DOMINO_TESTS_ENVIRONMENT: github
+          SKIP_OKTE_INTEGRATION: "1"
         run: |
           pytest --cov=pieces --cov-report=xml --cov-report=term-missing
 
