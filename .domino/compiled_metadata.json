@@ -171,11 +171,74 @@
         },
         "input_schema": {
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Synthetic data generation config.\nExpected keys:\n- `dataset_type`: one of `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine`.\n- `output_mode`: `batch_sample` or `realtime_stream`.\n- `records_count`: number of generated rows (default 20).\n- `time_step_minutes`: step between timestamps (default 15).\n- `interval_ms`: realtime interval hint in milliseconds (default 1000).\n- Optional: `start_at` (ISO datetime), `seed` (int), `timezone_offset_hours` (number).",
-                    "title": "Payload",
+                "dataset_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Type of generated dataset: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` (also accepts long names like `SolarGIS Dataset`).",
+                    "title": "Dataset Type"
+                },
+                "output_mode": {
+                    "default": "batch_sample",
+                    "description": "Generation mode: `batch_sample` or `realtime_stream`.",
+                    "title": "Output Mode",
                     "type": "string"
+                },
+                "records_count": {
+                    "default": 20,
+                    "description": "Number of records to generate.",
+                    "title": "Records Count",
+                    "type": "integer"
+                },
+                "time_step_minutes": {
+                    "default": 15,
+                    "description": "Time step between generated records in minutes.",
+                    "title": "Time Step Minutes",
+                    "type": "integer"
+                },
+                "interval_ms": {
+                    "default": 1000,
+                    "description": "Realtime interval hint in milliseconds.",
+                    "title": "Interval Ms",
+                    "type": "integer"
+                },
+                "start_at": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional start datetime in ISO format.",
+                    "title": "Start At"
+                },
+                "seed": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional random seed for reproducible synthetic data.",
+                    "title": "Seed"
+                },
+                "timezone_offset_hours": {
+                    "default": 1.0,
+                    "description": "Timezone offset used by SolarGIS-like records.",
+                    "title": "Timezone Offset Hours",
+                    "type": "number"
                 }
             },
             "title": "InputModel",

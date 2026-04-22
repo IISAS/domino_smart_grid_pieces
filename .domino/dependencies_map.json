@@ -13,7 +13,7 @@
             "ExplainablePredictionPiece"
         ],
         "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:0.1.11-group0"
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:0.1.12-group0"
     },
     "group1": {
         "dependency": {
@@ -25,7 +25,7 @@
             "PVOUTErrorCorrectionModelTrainPiece"
         ],
         "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:0.1.11-group1"
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:0.1.12-group1"
     },
     "group2": {
         "dependency": {
@@ -36,7 +36,7 @@
             "ElectricityPricePredictionModelTrainPiece"
         ],
         "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:0.1.11-group2"
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:0.1.12-group2"
     },
     "group3": {
         "dependency": {
@@ -47,6 +47,6 @@
             "PVOUTPredictionModelTrainPiece"
         ],
         "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:0.1.11-group3"
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:0.1.12-group3"
     }
 }
