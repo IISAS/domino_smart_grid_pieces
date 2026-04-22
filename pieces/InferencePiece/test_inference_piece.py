@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import importlib
+import os
 
 import pytest
 from domino.testing import piece_dry_run
@@ -52,6 +53,10 @@ def test_inference_piece_smoke():
 
 
 def test_inference_piece_pvout_correction_stub_model(monkeypatch, tmp_path: Path):
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Monkeypatch-based inference unit test is local-only (in-process dry_run)."
+        )
     try:
         import numpy as np  # noqa: F401
         import pandas  # noqa: F401
@@ -108,6 +113,10 @@ def test_inference_piece_pvout_correction_stub_model(monkeypatch, tmp_path: Path
 
 def test_inference_piece_price_ahead_baseline_from_profile(monkeypatch, tmp_path: Path):
     """build_baseline_if_missing + price_profile_path (no serialized model file)."""
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Monkeypatch-based inference unit test is local-only (in-process dry_run)."
+        )
     try:
         import numpy as np  # noqa: F401
         import pandas  # noqa: F401
@@ -160,6 +169,10 @@ def test_inference_piece_price_ahead_baseline_from_profile(monkeypatch, tmp_path
 
 
 def test_inference_piece_price_level_stub(monkeypatch, tmp_path: Path):
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Monkeypatch-based inference unit test is local-only (in-process dry_run)."
+        )
     try:
         import numpy as np  # noqa: F401
         import pandas  # noqa: F401
@@ -197,6 +210,10 @@ def test_inference_piece_price_level_stub(monkeypatch, tmp_path: Path):
 
 
 def test_inference_piece_stages_pipeline_single_stage(monkeypatch, tmp_path: Path):
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Monkeypatch-based inference unit test is local-only (in-process dry_run)."
+        )
     try:
         import numpy as np  # noqa: F401
         import pandas  # noqa: F401
