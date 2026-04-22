@@ -1,43 +1,42 @@
 {
-    "PVOUTErrorCorrectionModelTrainPiece": {
-        "name": "PVOUTErrorCorrectionModelTrainPiece",
+    "EvaluateMLModelPiece": {
+        "name": "EvaluateMLModelPiece",
         "dependency": {
             "dockerfile": null,
             "requirements_file": "requirements_0.txt"
         },
         "tags": [
             "Template",
-            "Train",
-            "PVOUT",
-            "ErrorCorrection"
+            "Model",
+            "Evaluation"
         ],
         "style": {
-            "node_label": "Train PVOUT Error Correction Model",
+            "node_label": "Evaluate ML Model",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:sliders",
+            "icon_class_name": "fa-solid:clipboard-check",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "Template piece for training a PVOUT error-correction model.",
+        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
         "container_resources": {
             "requests": {
-                "cpu": 200,
-                "memory": 256
+                "cpu": 100,
+                "memory": 128
             },
             "limits": {
-                "cpu": 1000,
-                "memory": 2048
+                "cpu": 500,
+                "memory": 1024
             }
         },
         "input_schema": {
             "properties": {
                 "payload": {
-                    "description": "Arbitrary inputs (e.g., training dataset URI, correction targets, hyperparameters).",
+                    "description": "Arbitrary inputs.\nSupported evaluation keys (optional):\n- `evaluation_option`: 'normal' or 'errorcorrection' (default: 'normal').\n- `pred_df`: predictions DataFrame (required for evaluation).\n- `true_baseline_df`: baseline DataFrame (used for errorcorrection when `y_true` isn't provided).\n- `y_true`: array/series of true values (used for errorcorrection test split).\n- `baseline_id`: baseline pred_sequence_id (default: 1).\n- `plot`: bool (default: false; heatmaps only generated when true).\n",
                     "title": "Payload",
                     "type": "object"
                 }
@@ -53,7 +52,7 @@
                     "type": "string"
                 },
                 "artifacts": {
-                    "description": "Optional outputs (e.g., trained corrector URI, evaluation metrics).",
+                    "description": "Optional outputs (e.g., metrics JSON, plots, report URI).",
                     "title": "Artifacts",
                     "type": "object"
                 }
@@ -65,32 +64,32 @@
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTErrorCorrectionModelTrainPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
     },
-    "FeatureDerivationPiece": {
-        "name": "FeatureDerivationPiece",
+    "DataNormalizationPiece": {
+        "name": "DataNormalizationPiece",
         "dependency": {
             "dockerfile": null,
             "requirements_file": "requirements_0.txt"
         },
         "tags": [
             "Template",
-            "Features",
-            "FeatureEngineering"
+            "Data",
+            "Normalization"
         ],
         "style": {
-            "node_label": "Feature Derivation",
+            "node_label": "Data Normalization",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:wand-magic-sparkles",
+            "icon_class_name": "fa-solid:scale-balanced",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "Template piece for deriving features (time-series, lag, rolling stats) from preprocessed smart-grid data.",
+        "description": "Template piece for normalizing raw smart-grid data into a consistent scale and schema.",
         "container_resources": {
             "requests": {
                 "cpu": 100,
@@ -104,7 +103,7 @@
         "input_schema": {
             "properties": {
                 "payload": {
-                    "description": "Arbitrary inputs (e.g., preprocessed dataset URI, feature config).",
+                    "description": "Arbitrary inputs. For DataNormalizationPiece, expected keys include: `dataframe` (dataframe-like object), `type` (normalization type), and optional `features` (list of column names to normalize).",
                     "title": "Payload",
                     "type": "object"
                 }
@@ -120,7 +119,7 @@
                     "type": "string"
                 },
                 "artifacts": {
-                    "description": "Optional outputs (e.g., feature matrix URI, feature list).",
+                    "description": "Optional outputs (e.g., normalized dataset URI, fitted scaler params).",
                     "title": "Artifacts",
                     "type": "object"
                 }
@@ -132,7 +131,74 @@
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/FeatureDerivationPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataNormalizationPiece"
+    },
+    "InferencePiece": {
+        "name": "InferencePiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_1.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Inference"
+        ],
+        "style": {
+            "node_label": "Inference",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:bolt",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Runs inference on prepared features: pvout_correction or price_ahead (base + model correction).",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "properties": {
+                "payload": {
+                    "description": "Inference inputs. For a no-op run, pass an empty payload, or omit both `mode` and `stages`.\nMVP keys when running inference:\n- `mode`: `pvout_correction`, `price_ahead` (baseline + correction), or `price_level` (direct regression output, e.g. EUR/MWh from electricity price XGB model).\n- `model_path`: path to `.pkl` (joblib) or xgboost booster file.\n- `input`: `{ \"tabular_data\": [...] }` or `{ \"data_path\": \"...\" }` (CSV/parquet).\n- `datetime_column` (default `datetime`), `feature_columns` (or from preprocessing metadata).\n- `base_forecast_column`: e.g. `PVOUT` or `price_baseline`.\n- `horizon_column` (default `pred_sequence_id`), optional `max_horizon`.\n- Optional: `preprocessing_metadata_path`, `strict_schema`, `missing_fill_value`, `per_horizon_outputs`, `forecast_output_csv_path`, `return_debug`.\n- Price mode: `build_baseline_if_missing` + `price_profile_path` (CSV with `dow`, `slot_15m`, `avg_price_eur_mwh`) when baseline column is missing.\nUpstream data fetching (SolarGis, weather, OKTE) is expected in separate pipeline steps; this piece consumes prepared tabular features.",
+                    "title": "Payload",
+                    "type": "object"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "No-op: `input_payload`. Run: `forecast` (inline_records, csv_path, columns), `per_horizon`, `metadata`, optional `debug`. Pipeline: additionally `stage_summaries`.",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
     },
     "DataPreprocessingPiece": {
         "name": "DataPreprocessingPiece",
@@ -171,7 +237,7 @@
         "input_schema": {
             "properties": {
                 "payload": {
-                    "description": "Arbitrary inputs (e.g., raw dataset URI, schema, cleaning rules).",
+                    "description": "Preprocessing inputs. Expected keys:\n- `preprocessing_option`: one of `none`, `prediction`, `correction` (default: `none`).\n- For `prediction`: provide either `dataframe` (preferred) or `data_path`, plus `save_data_path` (optional), `flag_each_day`, `preprocessor_features`, and `keep_datetime`.\n- For `correction`: provide either `dataframe` (preferred) or `data_path`, plus `save_data_path` (optional), `flag_each_day`, `preprocessor_features` and optional `test_size` / `load_all_data`.",
                     "title": "Payload",
                     "type": "object"
                 }
@@ -201,44 +267,45 @@
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataPreprocessingPiece"
     },
-    "EvaluateMLModelPiece": {
-        "name": "EvaluateMLModelPiece",
+    "PVOUTErrorCorrectionModelTrainPiece": {
+        "name": "PVOUTErrorCorrectionModelTrainPiece",
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
+            "requirements_file": "requirements_1.txt"
         },
         "tags": [
             "Template",
-            "Model",
-            "Evaluation"
+            "Train",
+            "PVOUT",
+            "ErrorCorrection"
         ],
         "style": {
-            "node_label": "Evaluate ML Model",
+            "node_label": "Train PVOUT Error Correction Model",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:clipboard-check",
+            "icon_class_name": "fa-solid:sliders",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
+        "description": "Template piece for training a PVOUT error-correction model.",
         "container_resources": {
             "requests": {
-                "cpu": 100,
-                "memory": 128
+                "cpu": 200,
+                "memory": 256
             },
             "limits": {
-                "cpu": 500,
-                "memory": 1024
+                "cpu": 1000,
+                "memory": 2048
             }
         },
         "input_schema": {
             "properties": {
                 "payload": {
-                    "description": "Arbitrary inputs (e.g., model URI, validation dataset URI, metric configuration).",
+                    "description": "Training inputs for PVOUT error-correction model.\nExpected keys:\n- `model_type`: one of `error_correction_xgb_regressor_model`, `error_correction_residual_meta_xgb_regressor_model`, `error_correction_difficulty_weighted_xgb_regressor_model` (and lightweight built-ins `linear_regression` / `ridge_regression`).\n- `model_params`: constructor params passed to selected model.\n- `model_setup`: dict with `feature_columns`, optional `target_column`, and `pred_column` for error-correction models.\n- Input data provided by `data_path` (CSV) or `tabular_data` (list[dict] / dict-of-lists).\n- Optional `checkpoint_dir` for saved model checkpoint.",
                     "title": "Payload",
                     "type": "object"
                 }
@@ -254,7 +321,7 @@
                     "type": "string"
                 },
                 "artifacts": {
-                    "description": "Optional outputs (e.g., metrics JSON, plots, report URI).",
+                    "description": "Optional outputs (e.g., trained corrector URI, evaluation metrics).",
                     "title": "Artifacts",
                     "type": "object"
                 }
@@ -266,13 +333,13 @@
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTErrorCorrectionModelTrainPiece"
     },
     "ElectricityPricePredictionModelTrainPiece": {
         "name": "ElectricityPricePredictionModelTrainPiece",
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
+            "requirements_file": "requirements_3.txt"
         },
         "tags": [
             "Template",
@@ -306,7 +373,7 @@
         "input_schema": {
             "properties": {
                 "payload": {
-                    "description": "Arbitrary inputs (e.g., training dataset URI, market features, hyperparameters).",
+                    "description": "Train an XGBoost regressor for electricity price (EUR/MWh) from tabular energy data.\n\n**Input data** (one row per delivery interval, e.g. 15 min):\n- `tabular_data` / `data_path` / `csv_path`: rows with energy-side features you already have (load, RES forecast, temperature, lags, calendar, etc.).\n- `model_setup.datetime_column` (default `datetime`): wall time of the interval; naive values are interpreted as Europe/Bratislava when using OKTE.\n- `model_setup.feature_columns` (required): numeric columns used as X.\n- `model_setup.target_column` (default `price_eur_mwh`): regression target y.\n- `model_setup.target_source`:\n  - `column` \u2014 target must already be present in each row (historical prices from any source).\n  - `okte` \u2014 fetch DAM prices from OKTE for each row's slot (optional `okte.endpoint`); writes `price_eur_mwh` and `price_source` before training.\n\n**Training**:\n- `xgb_params`: optional dict passed to `xgboost.XGBRegressor` (defaults are sensible for tabular).\n- `output_dir`, `model_filename` (default `electricity_price_xgb.joblib`).\n- `save_enriched_csv`: if true and `target_source=okte`, also write merged CSV for debugging.\n\n**Outputs**: `model_path` (joblib), `preprocessing_metadata.json` path, `train_metrics`, `train_rows`, `fallback_used` (OKTE 28d fallback when applicable).",
                     "title": "Payload",
                     "type": "object"
                 }
@@ -322,7 +389,7 @@
                     "type": "string"
                 },
                 "artifacts": {
-                    "description": "Optional outputs (e.g., trained model URI, backtest metrics).",
+                    "description": "Training outputs: `model_path`, `preprocessing_metadata_path`, `train_metrics`, `train_rows`, `fallback_used`; optional `enriched_csv_path`.",
                     "title": "Artifacts",
                     "type": "object"
                 }
@@ -340,7 +407,7 @@
         "name": "PVOUTPredictionModelTrainPiece",
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
+            "requirements_file": "requirements_2.txt"
         },
         "tags": [
             "Template",
@@ -374,7 +441,7 @@
         "input_schema": {
             "properties": {
                 "payload": {
-                    "description": "Arbitrary inputs (e.g., training dataset URI, hyperparameters, feature list).",
+                    "description": "Training inputs for PVOUT prediction model.\nExpected keys:\n- `model_type`: one of `linear_regression_model`, `xgb_regressor_model`, `interval_xgb_regressor_model`, `eda_rule_baseline`, `tabpfn_regressor_model`.\n- `model_params`: constructor params for selected model.\n- `model_setup`: dict with required `feature_columns` and optional `target_column`.\n- Input data via `data_path` (CSV) or `tabular_data` (list[dict] / dict-of-lists).\n- Optional `checkpoint_dir` for model checkpoint.",
                     "title": "Payload",
                     "type": "object"
                 }
@@ -403,73 +470,6 @@
         },
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTPredictionModelTrainPiece"
-    },
-    "ExplainablePredictionPiece": {
-        "name": "ExplainablePredictionPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "Template",
-            "Model",
-            "Explainability"
-        ],
-        "style": {
-            "node_label": "Explainable Prediction",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:magnifying-glass-chart",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Template piece for generating prediction explanations (e.g., feature attributions) alongside inference results.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 1024
-            }
-        },
-        "input_schema": {
-            "properties": {
-                "payload": {
-                    "description": "Arbitrary inputs (e.g., model URI, predictions URI, features URI, explainer config).",
-                    "title": "Payload",
-                    "type": "object"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., explanation report URI, attribution arrays).",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ExplainablePredictionPiece"
     },
     "ModelDeciderPiece": {
         "name": "ModelDeciderPiece",
@@ -538,8 +538,8 @@
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ModelDeciderPiece"
     },
-    "InferencePiece": {
-        "name": "InferencePiece",
+    "ExplainablePredictionPiece": {
+        "name": "ExplainablePredictionPiece",
         "dependency": {
             "dockerfile": null,
             "requirements_file": "requirements_0.txt"
@@ -547,21 +547,21 @@
         "tags": [
             "Template",
             "Model",
-            "Inference"
+            "Explainability"
         ],
         "style": {
-            "node_label": "Inference",
+            "node_label": "Explainable Prediction",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:bolt",
+            "icon_class_name": "fa-solid:magnifying-glass-chart",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "Template piece for running inference using a selected model on prepared features.",
+        "description": "Template piece for generating prediction explanations (e.g., feature attributions) alongside inference results.",
         "container_resources": {
             "requests": {
                 "cpu": 100,
@@ -569,13 +569,13 @@
             },
             "limits": {
                 "cpu": 500,
-                "memory": 512
+                "memory": 1024
             }
         },
         "input_schema": {
             "properties": {
                 "payload": {
-                    "description": "Arbitrary inputs (e.g., model URI, features URI, inference parameters).",
+                    "description": "Inputs for generating explanations.\nOptional keys:\n- `model`: trained model object.\n- `data`: evaluation dataset as `pd.DataFrame`, `(X, y)` tuple, or dict `{X, y?, feature_names?}`.\n- `explainability`: `{method: 'lime'|'shap', mode: 'regression'|'classification', ...}`.\n- `explain_method`: shortcut for `explainability.method`.\n- `use_diagnostic_loss`: if true, build diagnostic heatmaps from `payload['diagnostic']`.\n- `diagnostic`: dict with precomputed diagnostic arrays used by diagnostic heatmaps.\n- `x_train`: optional DataFrame used to derive `hour_of_day` for heatmaps.",
                     "title": "Payload",
                     "type": "object"
                 }
@@ -591,7 +591,7 @@
                     "type": "string"
                 },
                 "artifacts": {
-                    "description": "Optional outputs (e.g., predictions URI, metrics, logs).",
+                    "description": "Optional outputs (e.g., explanation report URI, attribution arrays).",
                     "title": "Artifacts",
                     "type": "object"
                 }
@@ -603,73 +603,6 @@
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
-    },
-    "DataNormalizationPiece": {
-        "name": "DataNormalizationPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "Template",
-            "Data",
-            "Normalization"
-        ],
-        "style": {
-            "node_label": "Data Normalization",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:scale-balanced",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Template piece for normalizing raw smart-grid data into a consistent scale and schema.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 512
-            }
-        },
-        "input_schema": {
-            "properties": {
-                "payload": {
-                    "description": "Arbitrary inputs (e.g., dataframe metadata, file paths/URIs, column mappings).",
-                    "title": "Payload",
-                    "type": "object"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., normalized dataset URI, fitted scaler params).",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataNormalizationPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ExplainablePredictionPiece"
     }
 }
