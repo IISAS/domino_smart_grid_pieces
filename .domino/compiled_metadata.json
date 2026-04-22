@@ -34,12 +34,64 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Arbitrary inputs as JSON object.\nSupported evaluation keys (optional):\n- `evaluation_option`: 'normal' or 'errorcorrection' (default: 'normal').\n- `pred_df`: predictions DataFrame (required for evaluation).\n- `true_baseline_df`: baseline DataFrame (used for errorcorrection when `y_true` isn't provided).\n- `y_true`: array/series of true values (used for errorcorrection test split).\n- `baseline_id`: baseline pred_sequence_id (default: 1).\n- `plot`: bool (default: false; heatmaps only generated when true).\n",
-                    "title": "Payload",
+                "evaluation_option": {
+                    "default": "normal",
+                    "description": "Evaluation mode: `normal` or `errorcorrection`.",
+                    "title": "Evaluation Option",
                     "type": "string"
+                },
+                "baseline_id": {
+                    "default": 1,
+                    "description": "Baseline horizon id.",
+                    "title": "Baseline Id",
+                    "type": "integer"
+                },
+                "plot": {
+                    "default": false,
+                    "description": "Whether to generate plots/heatmaps.",
+                    "title": "Plot",
+                    "type": "boolean"
+                },
+                "pred_df": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Predictions payload as JSON object.",
+                    "title": "Pred Df"
+                },
+                "true_baseline_df": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional baseline payload as JSON object.",
+                    "title": "True Baseline Df"
+                },
+                "y_true": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional true values as JSON array.",
+                    "title": "Y True"
                 }
             },
             "title": "InputModel",
@@ -102,12 +154,49 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "JSON object with arbitrary inputs. For DataNormalizationPiece, expected keys include: `dataframe` (dataframe-like object), `type` (normalization type), and optional `features` (list of column names to normalize).",
-                    "title": "Payload",
-                    "type": "string"
+                "normalization_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Normalization type: `logaritmic`, `exponential`, `min_max`, or `z_score`.",
+                    "title": "Normalization Type"
+                },
+                "features": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional list of feature/column names to normalize.",
+                    "title": "Features"
+                },
+                "dataframe": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional JSON object (or upstream object) representing input dataframe-like data.",
+                    "title": "Dataframe"
                 }
             },
             "title": "InputModel",
@@ -170,6 +259,7 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
                 "dataset_type": {
                     "anyOf": [
@@ -301,12 +391,85 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Inference inputs as JSON object. For a no-op run, pass an empty payload, or omit both `mode` and `stages`.\nMVP keys when running inference:\n- `mode`: `pvout_correction`, `price_ahead` (baseline + correction), or `price_level` (direct regression output, e.g. EUR/MWh from electricity price XGB model).\n- `model_path`: path to `.pkl` (joblib) or xgboost booster file.\n- `input`: `{ \"tabular_data\": [...] }` or `{ \"data_path\": \"...\" }` (CSV/parquet).\n- `datetime_column` (default `datetime`), `feature_columns` (or from preprocessing metadata).\n- `base_forecast_column`: e.g. `PVOUT` or `price_baseline`.\n- `horizon_column` (default `pred_sequence_id`), optional `max_horizon`.\n- Optional: `preprocessing_metadata_path`, `strict_schema`, `missing_fill_value`, `per_horizon_outputs`, `forecast_output_csv_path`, `return_debug`.\n- Price mode: `build_baseline_if_missing` + `price_profile_path` (CSV with `dow`, `slot_15m`, `avg_price_eur_mwh`) when baseline column is missing.\nUpstream data fetching (SolarGis, weather, OKTE) is expected in separate pipeline steps; this piece consumes prepared tabular features.",
-                    "title": "Payload",
-                    "type": "string"
+                "mode": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Inference mode: `pvout_correction`, `price_ahead`, `price_level`.",
+                    "title": "Mode"
+                },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Model artifact path.",
+                    "title": "Model Path"
+                },
+                "datetime_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Datetime column name.",
+                    "title": "Datetime Column"
+                },
+                "base_forecast_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Baseline forecast column name.",
+                    "title": "Base Forecast Column"
+                },
+                "horizon_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Horizon/id column name.",
+                    "title": "Horizon Column"
+                },
+                "max_horizon": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional maximum horizon.",
+                    "title": "Max Horizon"
                 }
             },
             "title": "InputModel",
@@ -369,12 +532,72 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Preprocessing inputs as JSON object. Expected keys:\n- `preprocessing_option`: one of `none`, `prediction`, `correction` (default: `none`).\n- For `prediction`: provide either `dataframe` (preferred) or `data_path`, plus `save_data_path` (optional), `flag_each_day`, `preprocessor_features`, and `keep_datetime`.\n- For `correction`: provide either `dataframe` (preferred) or `data_path`, plus `save_data_path` (optional), `flag_each_day`, `preprocessor_features` and optional `test_size` / `load_all_data`.",
-                    "title": "Payload",
-                    "type": "string"
+                "preprocessing_option": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "One of: `none`, `prediction`, `correction`.",
+                    "title": "Preprocessing Option"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional input data path.",
+                    "title": "Data Path"
+                },
+                "save_data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional output path.",
+                    "title": "Save Data Path"
+                },
+                "test_size": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional split size.",
+                    "title": "Test Size"
+                },
+                "keep_datetime": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Keep datetime column if supported.",
+                    "title": "Keep Datetime"
                 }
             },
             "title": "InputModel",
@@ -438,12 +661,59 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Training inputs for PVOUT error-correction model.\nExpected keys:\n- `model_type`: one of `error_correction_xgb_regressor_model`, `error_correction_residual_meta_xgb_regressor_model`, `error_correction_difficulty_weighted_xgb_regressor_model` (and lightweight built-ins `linear_regression` / `ridge_regression`).\n- `model_params`: constructor params passed to selected model.\n- `model_setup`: dict with `feature_columns`, optional `target_column`, and `pred_column` for error-correction models.\n- Input data provided by `data_path` (CSV) or `tabular_data` (list[dict] / dict-of-lists).\n- Optional `checkpoint_dir` for saved model checkpoint.",
-                    "title": "Payload",
-                    "type": "string"
+                "model_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Training model type.",
+                    "title": "Model Type"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Input CSV path.",
+                    "title": "Data Path"
+                },
+                "csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Alias for input CSV path.",
+                    "title": "Csv Path"
+                },
+                "checkpoint_dir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional checkpoint directory.",
+                    "title": "Checkpoint Dir"
                 }
             },
             "title": "InputModel",
@@ -507,12 +777,72 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Train an XGBoost regressor for electricity price (EUR/MWh) from tabular energy data.\n\n**Input data** (one row per delivery interval, e.g. 15 min):\n- `tabular_data` / `data_path` / `csv_path`: rows with energy-side features you already have (load, RES forecast, temperature, lags, calendar, etc.).\n- `model_setup.datetime_column` (default `datetime`): wall time of the interval; naive values are interpreted as Europe/Bratislava when using OKTE.\n- `model_setup.feature_columns` (required): numeric columns used as X.\n- `model_setup.target_column` (default `price_eur_mwh`): regression target y.\n- `model_setup.target_source`:\n  - `column` \u2014 target must already be present in each row (historical prices from any source).\n  - `okte` \u2014 fetch DAM prices from OKTE for each row's slot (optional `okte.endpoint`); writes `price_eur_mwh` and `price_source` before training.\n\n**Training**:\n- `xgb_params`: optional dict passed to `xgboost.XGBRegressor` (defaults are sensible for tabular).\n- `output_dir`, `model_filename` (default `electricity_price_xgb.joblib`).\n- `save_enriched_csv`: if true and `target_source=okte`, also write merged CSV for debugging.\n\n**Outputs**: `model_path` (joblib), `preprocessing_metadata.json` path, `train_metrics`, `train_rows`, `fallback_used` (OKTE 28d fallback when applicable).",
-                    "title": "Payload",
-                    "type": "string"
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Input CSV path.",
+                    "title": "Data Path"
+                },
+                "csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Alias for input CSV path.",
+                    "title": "Csv Path"
+                },
+                "output_dir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Output directory.",
+                    "title": "Output Dir"
+                },
+                "model_filename": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Model output filename.",
+                    "title": "Model Filename"
+                },
+                "save_enriched_csv": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Save enriched CSV when target_source=okte.",
+                    "title": "Save Enriched Csv"
                 }
             },
             "title": "InputModel",
@@ -576,12 +906,59 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Training inputs for PVOUT prediction model.\nExpected keys:\n- `model_type`: one of `linear_regression_model`, `xgb_regressor_model`, `interval_xgb_regressor_model`, `eda_rule_baseline`, `tabpfn_regressor_model`.\n- `model_params`: constructor params for selected model.\n- `model_setup`: dict with required `feature_columns` and optional `target_column`.\n- Input data via `data_path` (CSV) or `tabular_data` (list[dict] / dict-of-lists).\n- Optional `checkpoint_dir` for model checkpoint.",
-                    "title": "Payload",
-                    "type": "string"
+                "model_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Training model type.",
+                    "title": "Model Type"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Input CSV path.",
+                    "title": "Data Path"
+                },
+                "csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Alias for input CSV path.",
+                    "title": "Csv Path"
+                },
+                "checkpoint_dir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional checkpoint directory.",
+                    "title": "Checkpoint Dir"
                 }
             },
             "title": "InputModel",
@@ -644,12 +1021,49 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Arbitrary inputs as JSON object (e.g., problem type, horizon, available models, constraints).",
-                    "title": "Payload",
-                    "type": "string"
+                "problem_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Problem type for model selection.",
+                    "title": "Problem Type"
+                },
+                "horizon": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Prediction horizon.",
+                    "title": "Horizon"
+                },
+                "available_models": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Available model identifiers.",
+                    "title": "Available Models"
                 }
             },
             "title": "InputModel",
@@ -712,12 +1126,71 @@
             }
         },
         "input_schema": {
+            "additionalProperties": true,
             "properties": {
-                "payload": {
-                    "default": "{}",
-                    "description": "Inputs for generating explanations as JSON object.\nOptional keys:\n- `model`: trained model object.\n- `data`: evaluation dataset as `pd.DataFrame`, `(X, y)` tuple, or dict `{X, y?, feature_names?}`.\n- `explainability`: `{method: 'lime'|'shap', mode: 'regression'|'classification', ...}`.\n- `explain_method`: shortcut for `explainability.method`.\n- `use_diagnostic_loss`: if true, build diagnostic heatmaps from `payload['diagnostic']`.\n- `diagnostic`: dict with precomputed diagnostic arrays used by diagnostic heatmaps.\n- `x_train`: optional DataFrame used to derive `hour_of_day` for heatmaps.",
-                    "title": "Payload",
-                    "type": "string"
+                "explain": {
+                    "default": false,
+                    "description": "Enable explainability run.",
+                    "title": "Explain",
+                    "type": "boolean"
+                },
+                "explain_method": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "`lime` or `shap`.",
+                    "title": "Explain Method"
+                },
+                "use_diagnostic_loss": {
+                    "default": false,
+                    "description": "Enable diagnostic heatmap artifacts.",
+                    "title": "Use Diagnostic Loss",
+                    "type": "boolean"
+                },
+                "model": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional model payload as JSON.",
+                    "title": "Model"
+                },
+                "data": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional data payload as JSON.",
+                    "title": "Data"
+                },
+                "x_train": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional x_train payload as JSON.",
+                    "title": "X Train"
                 }
             },
             "title": "InputModel",
