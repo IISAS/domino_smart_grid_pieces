@@ -5,7 +5,7 @@ import pytest
 def test_synthetic_data_generator_piece_smoke():
     output_data = piece_dry_run(
         "SyntheticDataGeneratorPiece",
-        {"payload": {}},
+        {},
     )
     assert output_data["message"] is not None
 
@@ -27,13 +27,11 @@ def test_synthetic_data_generator_piece_batch_all_dataset_types(
     output_data = piece_dry_run(
         "SyntheticDataGeneratorPiece",
         {
-            "payload": {
-                "dataset_type": dataset_type,
-                "output_mode": "batch_sample",
-                "records_count": 5,
-                "time_step_minutes": 15,
-                "seed": 123,
-            }
+            "dataset_type": dataset_type,
+            "output_mode": "batch_sample",
+            "records_count": 5,
+            "time_step_minutes": 15,
+            "seed": 123,
         },
     )
 
@@ -48,14 +46,12 @@ def test_synthetic_data_generator_piece_realtime_mode():
     output_data = piece_dry_run(
         "SyntheticDataGeneratorPiece",
         {
-            "payload": {
-                "dataset_type": "SoalrGIS Dataset",
-                "output_mode": "realtime_stream",
-                "records_count": 3,
-                "interval_ms": 1000,
-                "time_step_minutes": 15,
-                "seed": 7,
-            }
+            "dataset_type": "SoalrGIS Dataset",
+            "output_mode": "realtime_stream",
+            "records_count": 3,
+            "interval_ms": 1000,
+            "time_step_minutes": 15,
+            "seed": 7,
         },
     )
     artifacts = output_data["artifacts"]
