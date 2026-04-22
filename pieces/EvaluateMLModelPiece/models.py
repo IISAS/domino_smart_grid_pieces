@@ -1,38 +1,41 @@
-import json
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class InputModel(BaseModel):
-    payload: str = Field(
-        default="{}",
-        description=(
-            "Arbitrary inputs as JSON object.\n"
-            "Supported evaluation keys (optional):\n"
-            "- `evaluation_option`: 'normal' or 'errorcorrection' (default: 'normal').\n"
-            "- `pred_df`: predictions DataFrame (required for evaluation).\n"
-            "- `true_baseline_df`: baseline DataFrame (used for errorcorrection when `y_true` isn't provided).\n"
-            "- `y_true`: array/series of true values (used for errorcorrection test split).\n"
-            "- `baseline_id`: baseline pred_sequence_id (default: 1).\n"
-            "- `plot`: bool (default: false; heatmaps only generated when true).\n"
-        ),
+    model_config = ConfigDict(extra="allow")
+
+    evaluation_option: str = Field(
+        default="normal",
+        description="Evaluation mode: `normal` or `errorcorrection`.",
+    )
+    baseline_id: int = Field(default=1, description="Baseline horizon id.")
+    plot: bool = Field(default=False, description="Whether to generate plots/heatmaps.")
+    pred_df: str | None = Field(
+        default=None, description="Predictions payload as JSON object."
+    )
+    true_baseline_df: str | None = Field(
+        default=None, description="Optional baseline payload as JSON object."
+    )
+    y_true: str | None = Field(
+        default=None, description="Optional true values as JSON array."
     )
 
-    @field_validator("payload", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def _coerce_payload(cls, value):
-        if value is None:
-            return "{}"
-        if isinstance(value, (dict, list)):
-            return json.dumps(value)
-        return str(value)
+    def _unwrap_payload(cls, data):
+        if isinstance(data, dict) and isinstance(data.get("payload"), dict):
+            merged = dict(data["payload"])
+            for key, value in data.items():
+                if key != "payload":
+                    merged[key] = value
+            return merged
+        return data
+
+    def to_payload_dict(self) -> dict:
+        return self.model_dump(exclude_none=True)
 
     def payload_as_dict(self) -> dict:
-        try:
-            parsed = json.loads(self.payload) if self.payload else {}
-        except json.JSONDecodeError:
-            return {}
-        return parsed if isinstance(parsed, dict) else {}
+        return self.to_payload_dict()
 
 
 class OutputModel(BaseModel):

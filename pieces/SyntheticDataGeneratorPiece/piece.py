@@ -145,15 +145,16 @@ class SyntheticDataGeneratorPiece(BasePiece):
     }
 
     def piece_function(self, input_data: InputModel):
+        payload = input_data.to_payload_dict()
         self.logger.info("Running SyntheticDataGeneratorPiece.")
 
-        if not input_data.dataset_type:
+        if not payload.get("dataset_type"):
             return OutputModel(
                 message="SyntheticDataGeneratorPiece executed (no-op).",
-                artifacts={"input_payload": input_data.model_dump()},
+                artifacts={"input_payload": payload},
             )
 
-        raw_dataset_type = str(input_data.dataset_type).strip().lower()
+        raw_dataset_type = str(payload.get("dataset_type")).strip().lower()
         dataset_type = self.DATASET_ALIASES.get(raw_dataset_type)
         if dataset_type is None:
             raise ValueError(
@@ -163,27 +164,27 @@ class SyntheticDataGeneratorPiece(BasePiece):
                 "Dataset of Battery Parameters, Real Time Machine Data."
             )
 
-        output_mode = str(input_data.output_mode).strip().lower()
+        output_mode = str(payload.get("output_mode", "batch_sample")).strip().lower()
         if output_mode not in {"batch_sample", "realtime_stream"}:
             raise ValueError("output_mode must be `batch_sample` or `realtime_stream`.")
 
-        records_count = int(input_data.records_count)
+        records_count = int(payload.get("records_count", 20))
         if records_count <= 0:
             raise ValueError("records_count must be > 0")
 
-        time_step_minutes = int(input_data.time_step_minutes)
+        time_step_minutes = int(payload.get("time_step_minutes", 15))
         if time_step_minutes <= 0:
             raise ValueError("time_step_minutes must be > 0")
 
-        interval_ms = int(input_data.interval_ms)
+        interval_ms = int(payload.get("interval_ms", 1000))
         if interval_ms <= 0:
             raise ValueError("interval_ms must be > 0")
 
-        seed = input_data.seed
+        seed = payload.get("seed")
         if seed is not None:
             random.seed(int(seed))
 
-        start_at_value = input_data.start_at
+        start_at_value = payload.get("start_at")
         if start_at_value:
             start_at = datetime.fromisoformat(str(start_at_value))
             if start_at.tzinfo is None:
@@ -191,7 +192,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
         else:
             start_at = datetime.now(tz=timezone.utc)
 
-        tz_offset_hours = float(input_data.timezone_offset_hours)
+        tz_offset_hours = float(payload.get("timezone_offset_hours", 1.0))
 
         def _factory(ts: datetime) -> dict[str, Any]:
             if dataset_type == "solargis":

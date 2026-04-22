@@ -1,7 +1,9 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class InputModel(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     dataset_type: str | None = Field(
         default=None,
         description=(
@@ -38,6 +40,20 @@ class InputModel(BaseModel):
         default=1.0,
         description="Timezone offset used by SolarGIS-like records.",
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _unwrap_payload(cls, data):
+        if isinstance(data, dict) and isinstance(data.get("payload"), dict):
+            merged = dict(data["payload"])
+            for key, value in data.items():
+                if key != "payload":
+                    merged[key] = value
+            return merged
+        return data
+
+    def to_payload_dict(self) -> dict:
+        return self.model_dump(exclude_none=True)
 
 
 class OutputModel(BaseModel):

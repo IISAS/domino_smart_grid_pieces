@@ -1,33 +1,41 @@
-import json
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class InputModel(BaseModel):
-    payload: str = Field(
-        default="{}",
-        description=(
-            "JSON object with arbitrary inputs. For DataNormalizationPiece, expected keys include: "
-            "`dataframe` (dataframe-like object), `type` (normalization type), and optional "
-            "`features` (list of column names to normalize)."
-        ),
+    model_config = ConfigDict(extra="allow")
+
+    normalization_type: str | None = Field(
+        default=None,
+        description="Normalization type: `logaritmic`, `exponential`, `min_max`, or `z_score`.",
+    )
+    features: list[str] | None = Field(
+        default=None,
+        description="Optional list of feature/column names to normalize.",
+    )
+    dataframe: str | None = Field(
+        default=None,
+        description="Optional JSON object (or upstream object) representing input dataframe-like data.",
     )
 
-    @field_validator("payload", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def _coerce_payload(cls, value):
-        if value is None:
-            return "{}"
-        if isinstance(value, (dict, list)):
-            return json.dumps(value)
-        return str(value)
+    def _unwrap_payload(cls, data):
+        if isinstance(data, dict) and isinstance(data.get("payload"), dict):
+            merged = dict(data["payload"])
+            for key, value in data.items():
+                if key != "payload":
+                    merged[key] = value
+            return merged
+        return data
+
+    def to_payload_dict(self) -> dict:
+        out = self.model_dump(exclude_none=True)
+        if "normalization_type" in out and "type" not in out:
+            out["type"] = out["normalization_type"]
+        return out
 
     def payload_as_dict(self) -> dict:
-        try:
-            parsed = json.loads(self.payload) if self.payload else {}
-        except json.JSONDecodeError:
-            return {}
-        return parsed if isinstance(parsed, dict) else {}
+        return self.to_payload_dict()
 
 
 class OutputModel(BaseModel):

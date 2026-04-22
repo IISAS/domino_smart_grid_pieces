@@ -1,38 +1,32 @@
-import json
-
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class InputModel(BaseModel):
-    payload: str = Field(
-        default="{}",
-        description=(
-            "Training inputs for PVOUT prediction model.\n"
-            "Expected keys:\n"
-            "- `model_type`: one of `linear_regression_model`, `xgb_regressor_model`, "
-            "`interval_xgb_regressor_model`, `eda_rule_baseline`, `tabpfn_regressor_model`.\n"
-            "- `model_params`: constructor params for selected model.\n"
-            "- `model_setup`: dict with required `feature_columns` and optional `target_column`.\n"
-            "- Input data via `data_path` (CSV) or `tabular_data` (list[dict] / dict-of-lists).\n"
-            "- Optional `checkpoint_dir` for model checkpoint."
-        ),
+    model_config = ConfigDict(extra="allow")
+
+    model_type: str | None = Field(default=None, description="Training model type.")
+    data_path: str | None = Field(default=None, description="Input CSV path.")
+    csv_path: str | None = Field(default=None, description="Alias for input CSV path.")
+    checkpoint_dir: str | None = Field(
+        default=None, description="Optional checkpoint directory."
     )
 
-    @field_validator("payload", mode="before")
+    @model_validator(mode="before")
     @classmethod
-    def _coerce_payload(cls, value):
-        if value is None:
-            return "{}"
-        if isinstance(value, (dict, list)):
-            return json.dumps(value)
-        return str(value)
+    def _unwrap_payload(cls, data):
+        if isinstance(data, dict) and isinstance(data.get("payload"), dict):
+            merged = dict(data["payload"])
+            for key, value in data.items():
+                if key != "payload":
+                    merged[key] = value
+            return merged
+        return data
+
+    def to_payload_dict(self) -> dict:
+        return self.model_dump(exclude_none=True)
 
     def payload_as_dict(self) -> dict:
-        try:
-            parsed = json.loads(self.payload) if self.payload else {}
-        except json.JSONDecodeError:
-            return {}
-        return parsed if isinstance(parsed, dict) else {}
+        return self.to_payload_dict()
 
 
 class OutputModel(BaseModel):
