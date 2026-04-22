@@ -24,7 +24,7 @@ class InputModel(BaseModel):
         return data
 
     def to_payload_dict(self) -> dict:
-        return self.model_dump(exclude_none=True)
+        return self.model_dump(exclude_none=True, exclude_defaults=True)
 
     def payload_as_dict(self) -> dict:
         return self.to_payload_dict()

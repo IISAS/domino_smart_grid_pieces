@@ -53,7 +53,7 @@ class InputModel(BaseModel):
         return data
 
     def to_payload_dict(self) -> dict:
-        return self.model_dump(exclude_none=True)
+        return self.model_dump(exclude_none=True, exclude_defaults=True)
 
 
 class OutputModel(BaseModel):

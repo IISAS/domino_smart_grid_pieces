@@ -29,7 +29,7 @@ class InputModel(BaseModel):
         return data
 
     def to_payload_dict(self) -> dict:
-        out = self.model_dump(exclude_none=True)
+        out = self.model_dump(exclude_none=True, exclude_defaults=True)
         if "normalization_type" in out and "type" not in out:
             out["type"] = out["normalization_type"]
         return out
