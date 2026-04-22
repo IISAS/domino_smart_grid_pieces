@@ -5,7 +5,7 @@ from .models import InputModel, OutputModel
 
 class ExplainablePredictionPiece(BasePiece):
     def piece_function(self, input_data: InputModel):
-        payload = input_data.payload or {}
+        payload = input_data.payload_as_dict()
         self.logger.info("Running ExplainablePredictionPiece.")
 
         # Explainability config

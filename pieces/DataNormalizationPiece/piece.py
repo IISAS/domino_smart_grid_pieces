@@ -99,7 +99,7 @@ class DataNormalizationPiece(BasePiece):
                     data[k] = list(v)
             return data
 
-        payload = input_data.payload or {}
+        payload = input_data.payload_as_dict()
         df = payload.get("dataframe") or payload.get("X") or payload.get("data")
         normalization_type = payload.get("type") or payload.get("normalization_type")
         features = payload.get("features")

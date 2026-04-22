@@ -1,9 +1,11 @@
-from pydantic import BaseModel, Field
+import json
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class InputModel(BaseModel):
-    payload: dict = Field(
-        default_factory=dict,
+    payload: str = Field(
+        default="{}",
         description=(
             "Train an XGBoost regressor for electricity price (EUR/MWh) from tabular energy data.\n\n"
             "**Input data** (one row per delivery interval, e.g. 15 min):\n"
@@ -25,6 +27,22 @@ class InputModel(BaseModel):
             "`train_rows`, `fallback_used` (OKTE 28d fallback when applicable)."
         ),
     )
+
+    @field_validator("payload", mode="before")
+    @classmethod
+    def _coerce_payload(cls, value):
+        if value is None:
+            return "{}"
+        if isinstance(value, (dict, list)):
+            return json.dumps(value)
+        return str(value)
+
+    def payload_as_dict(self) -> dict:
+        try:
+            parsed = json.loads(self.payload) if self.payload else {}
+        except json.JSONDecodeError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
 
 
 class OutputModel(BaseModel):

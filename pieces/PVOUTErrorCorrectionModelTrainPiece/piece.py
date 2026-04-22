@@ -13,7 +13,7 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
 
         self.logger.info("Running PVOUTErrorCorrectionModelTrainPiece.")
 
-        payload = input_data.payload or {}
+        payload = input_data.payload_as_dict()
         if not payload:
             return OutputModel(
                 message="PVOUTErrorCorrectionModelTrainPiece template executed (no-op).",

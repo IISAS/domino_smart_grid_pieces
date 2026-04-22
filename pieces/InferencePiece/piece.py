@@ -7,7 +7,7 @@ from .utils.run_inference import run_inference, run_staged_inference
 class InferencePiece(BasePiece):
     def piece_function(self, input_data: InputModel):
         self.logger.info("Running InferencePiece.")
-        payload = input_data.payload or {}
+        payload = input_data.payload_as_dict()
 
         if not payload:
             return OutputModel(

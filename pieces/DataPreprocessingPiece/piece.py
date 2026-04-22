@@ -8,7 +8,7 @@ class DataPreprocessingPiece(BasePiece):
     def piece_function(self, input_data: InputModel):
         self.logger.info("Running DataPreprocessingPiece.")
 
-        payload = input_data.payload or {}
+        payload = input_data.payload_as_dict()
         preprocessing_option = (
             payload.get("preprocessing_option")
             or payload.get("preprocessing_type")

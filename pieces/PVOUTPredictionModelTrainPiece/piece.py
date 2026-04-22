@@ -13,7 +13,7 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
 
         self.logger.info("Running PVOUTPredictionModelTrainPiece.")
 
-        payload = input_data.payload or {}
+        payload = input_data.payload_as_dict()
         if not payload:
             return OutputModel(
                 message="PVOUTPredictionModelTrainPiece template executed (no-op).",

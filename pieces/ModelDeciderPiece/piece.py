@@ -9,5 +9,5 @@ class ModelDeciderPiece(BasePiece):
 
         return OutputModel(
             message="ModelDeciderPiece template executed (no-op).",
-            artifacts={"input_payload": input_data.payload},
+            artifacts={"input_payload": input_data.payload_as_dict()},
         )

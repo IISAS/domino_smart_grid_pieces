@@ -145,7 +145,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
     }
 
     def piece_function(self, input_data: InputModel):
-        payload = input_data.payload or {}
+        payload = input_data.payload_as_dict()
         self.logger.info("Running SyntheticDataGeneratorPiece.")
 
         if not payload:
