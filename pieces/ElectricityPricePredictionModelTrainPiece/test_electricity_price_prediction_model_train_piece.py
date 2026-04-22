@@ -56,10 +56,17 @@ def test_electricity_price_train_column_target_xgb(tmp_path):
     assert "rmse" in art["train_metrics"]
     assert art["fallback_used"] is False
 
-    model = joblib.load(art["model_path"])
-    meta = json.loads(Path(art["preprocessing_metadata_path"]).read_text(encoding="utf-8"))
-    assert meta["feature_columns_used"] == ["load_kw"]
-    assert hasattr(model, "predict")
+    # In HTTP dry-run mode artifacts can point to container-local paths.
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        assert art["model_path"].endswith((".joblib", ".pkl"))
+        assert art["preprocessing_metadata_path"].endswith(".json")
+    else:
+        model = joblib.load(art["model_path"])
+        meta = json.loads(
+            Path(art["preprocessing_metadata_path"]).read_text(encoding="utf-8")
+        )
+        assert meta["feature_columns_used"] == ["load_kw"]
+        assert hasattr(model, "predict")
 
 
 @pytest.mark.integration

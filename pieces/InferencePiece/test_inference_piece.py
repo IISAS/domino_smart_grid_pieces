@@ -11,9 +11,25 @@ because `piece_dry_run` puts the `pieces/` directory on `sys.path`.
 from __future__ import annotations
 
 from pathlib import Path
+import importlib
 
 import pytest
 from domino.testing import piece_dry_run
+
+
+def _load_run_inference_module():
+    """
+    Resolve module path in both local pytest and domino dry-run environments.
+    """
+    for module_name in (
+        "InferencePiece.utils.run_inference",
+        "pieces.InferencePiece.utils.run_inference",
+    ):
+        try:
+            return importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            continue
+    raise ModuleNotFoundError("Could not import InferencePiece run_inference module")
 
 
 class _StubPredictor:
@@ -44,9 +60,9 @@ def test_inference_piece_pvout_correction_stub_model(monkeypatch, tmp_path: Path
 
     dummy_model_path = str(tmp_path / "model.pkl")
 
+    run_inference_module = _load_run_inference_module()
     monkeypatch.setattr(
-        "InferencePiece.utils.run_inference.load_model_object",
-        lambda _payload: _StubPredictor(2.0),
+        run_inference_module, "load_model_object", lambda _payload: _StubPredictor(2.0)
     )
 
     rows = [
@@ -106,9 +122,9 @@ def test_inference_piece_price_ahead_baseline_from_profile(monkeypatch, tmp_path
         encoding="utf-8",
     )
 
+    run_inference_module = _load_run_inference_module()
     monkeypatch.setattr(
-        "InferencePiece.utils.run_inference.load_model_object",
-        lambda _payload: _StubPredictor(1.5),
+        run_inference_module, "load_model_object", lambda _payload: _StubPredictor(1.5)
     )
 
     rows = [
@@ -151,9 +167,9 @@ def test_inference_piece_price_level_stub(monkeypatch, tmp_path: Path):
         pytest.skip("numpy/pandas not installed")
 
     dummy_model_path = str(tmp_path / "price.joblib")
+    run_inference_module = _load_run_inference_module()
     monkeypatch.setattr(
-        "InferencePiece.utils.run_inference.load_model_object",
-        lambda _payload: _StubPredictor(62.5),
+        run_inference_module, "load_model_object", lambda _payload: _StubPredictor(62.5)
     )
     output_data = piece_dry_run(
         "InferencePiece",
@@ -187,9 +203,9 @@ def test_inference_piece_stages_pipeline_single_stage(monkeypatch, tmp_path: Pat
     except ImportError:
         pytest.skip("numpy/pandas not installed")
 
+    run_inference_module = _load_run_inference_module()
     monkeypatch.setattr(
-        "InferencePiece.utils.run_inference.load_model_object",
-        lambda _payload: _StubPredictor(42.0),
+        run_inference_module, "load_model_object", lambda _payload: _StubPredictor(42.0)
     )
     output_data = piece_dry_run(
         "InferencePiece",
