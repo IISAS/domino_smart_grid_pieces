@@ -16,6 +16,7 @@ def test_synthetic_data_generator_piece_smoke():
         ("solargis", "GHI"),
         ("microstep", "station_id"),
         ("shmu", "station_code"),
+        ("shmi", "station_code"),
         ("okte", "spot_price_eur_mwh"),
         ("battery", "battery_id"),
         ("machine", "machine_id"),
@@ -36,7 +37,8 @@ def test_synthetic_data_generator_piece_batch_all_dataset_types(
     )
 
     artifacts = output_data["artifacts"]
-    assert artifacts["dataset_type"] == dataset_type
+    expected_dataset_type = "shmu" if dataset_type == "shmi" else dataset_type
+    assert artifacts["dataset_type"] == expected_dataset_type
     assert artifacts["output_mode"] == "batch_sample"
     assert len(artifacts["records"]) == 5
     assert required_key in artifacts["records"][0]

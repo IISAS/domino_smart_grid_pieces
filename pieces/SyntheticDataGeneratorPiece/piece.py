@@ -133,6 +133,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
         "microstep meteorological data": "microstep",
         "microstep_meteorological_data": "microstep",
         "shmu": "shmu",
+        "shmi": "shmu",
         "slovak hydrometeorological institute data": "shmu",
         "slovak_hydrometeorological_institute_data": "shmu",
         "okte": "okte",
@@ -148,90 +149,101 @@ class SyntheticDataGeneratorPiece(BasePiece):
         payload = input_data.to_payload_dict()
         self.logger.info("Running SyntheticDataGeneratorPiece.")
 
-        if not payload.get("dataset_type"):
+        try:
+            if not payload.get("dataset_type"):
+                return OutputModel(
+                    message="SyntheticDataGeneratorPiece executed (no-op).",
+                    artifacts={"input_payload": payload},
+                )
+
+            raw_dataset_type = str(payload.get("dataset_type")).strip().lower()
+            dataset_type = self.DATASET_ALIASES.get(raw_dataset_type)
+            if dataset_type is None:
+                raise ValueError(
+                    "Invalid dataset_type. Choose one of: "
+                    "SolarGIS Dataset, MicroStep Meteorological Data, "
+                    "Slovak Hydrometeorological Institute Data, OKTE, "
+                    "Dataset of Battery Parameters, Real Time Machine Data."
+                )
+
+            output_mode = (
+                str(payload.get("output_mode", "batch_sample")).strip().lower()
+            )
+            if output_mode not in {"batch_sample", "realtime_stream"}:
+                raise ValueError(
+                    "output_mode must be `batch_sample` or `realtime_stream`."
+                )
+
+            records_count = int(payload.get("records_count", 20))
+            if records_count <= 0:
+                raise ValueError("records_count must be > 0")
+
+            time_step_minutes = int(payload.get("time_step_minutes", 15))
+            if time_step_minutes <= 0:
+                raise ValueError("time_step_minutes must be > 0")
+
+            interval_ms = int(payload.get("interval_ms", 1000))
+            if interval_ms <= 0:
+                raise ValueError("interval_ms must be > 0")
+
+            seed = payload.get("seed")
+            if seed is not None:
+                random.seed(int(seed))
+
+            start_at_value = payload.get("start_at")
+            if start_at_value:
+                start_at = datetime.fromisoformat(str(start_at_value))
+                if start_at.tzinfo is None:
+                    start_at = start_at.replace(tzinfo=timezone.utc)
+            else:
+                start_at = datetime.now(tz=timezone.utc)
+
+            tz_offset_hours = float(payload.get("timezone_offset_hours", 1.0))
+
+            def _factory(ts: datetime) -> dict[str, Any]:
+                if dataset_type == "solargis":
+                    return _solargis_record(ts, tz_offset_hours=tz_offset_hours)
+                if dataset_type == "microstep":
+                    return _microstep_record(ts)
+                if dataset_type == "shmu":
+                    return _shmu_record(ts)
+                if dataset_type == "okte":
+                    return _okte_record(ts)
+                if dataset_type == "battery":
+                    return _battery_record(ts)
+                return _machine_record(ts)
+
+            synthesizer = TimeSeriesDatasetSynthesizer(
+                factory=_factory, start_at=start_at, step_minutes=time_step_minutes
+            )
+
+            records = [synthesizer.next_sample() for _ in range(records_count)]
+
             return OutputModel(
-                message="SyntheticDataGeneratorPiece executed (no-op).",
-                artifacts={"input_payload": payload},
-            )
-
-        raw_dataset_type = str(payload.get("dataset_type")).strip().lower()
-        dataset_type = self.DATASET_ALIASES.get(raw_dataset_type)
-        if dataset_type is None:
-            raise ValueError(
-                "Invalid dataset_type. Choose one of: "
-                "SolarGIS Dataset, MicroStep Meteorological Data, "
-                "Slovak Hydrometeorological Institute Data, OKTE, "
-                "Dataset of Battery Parameters, Real Time Machine Data."
-            )
-
-        output_mode = str(payload.get("output_mode", "batch_sample")).strip().lower()
-        if output_mode not in {"batch_sample", "realtime_stream"}:
-            raise ValueError("output_mode must be `batch_sample` or `realtime_stream`.")
-
-        records_count = int(payload.get("records_count", 20))
-        if records_count <= 0:
-            raise ValueError("records_count must be > 0")
-
-        time_step_minutes = int(payload.get("time_step_minutes", 15))
-        if time_step_minutes <= 0:
-            raise ValueError("time_step_minutes must be > 0")
-
-        interval_ms = int(payload.get("interval_ms", 1000))
-        if interval_ms <= 0:
-            raise ValueError("interval_ms must be > 0")
-
-        seed = payload.get("seed")
-        if seed is not None:
-            random.seed(int(seed))
-
-        start_at_value = payload.get("start_at")
-        if start_at_value:
-            start_at = datetime.fromisoformat(str(start_at_value))
-            if start_at.tzinfo is None:
-                start_at = start_at.replace(tzinfo=timezone.utc)
-        else:
-            start_at = datetime.now(tz=timezone.utc)
-
-        tz_offset_hours = float(payload.get("timezone_offset_hours", 1.0))
-
-        def _factory(ts: datetime) -> dict[str, Any]:
-            if dataset_type == "solargis":
-                return _solargis_record(ts, tz_offset_hours=tz_offset_hours)
-            if dataset_type == "microstep":
-                return _microstep_record(ts)
-            if dataset_type == "shmu":
-                return _shmu_record(ts)
-            if dataset_type == "okte":
-                return _okte_record(ts)
-            if dataset_type == "battery":
-                return _battery_record(ts)
-            return _machine_record(ts)
-
-        synthesizer = TimeSeriesDatasetSynthesizer(
-            factory=_factory, start_at=start_at, step_minutes=time_step_minutes
-        )
-
-        records = [synthesizer.next_sample() for _ in range(records_count)]
-
-        return OutputModel(
-            message="SyntheticDataGeneratorPiece executed.",
-            artifacts={
-                "dataset_type": dataset_type,
-                "output_mode": output_mode,
-                "records": records,
-                "generation_config": {
-                    "records_count": records_count,
-                    "time_step_minutes": time_step_minutes,
-                    "interval_ms": interval_ms,
-                    "start_at_utc": start_at.astimezone(timezone.utc).isoformat(),
-                },
-                "stream_hint": (
-                    {
+                message="SyntheticDataGeneratorPiece executed.",
+                artifacts={
+                    "dataset_type": dataset_type,
+                    "output_mode": output_mode,
+                    "records": records,
+                    "generation_config": {
+                        "records_count": records_count,
+                        "time_step_minutes": time_step_minutes,
                         "interval_ms": interval_ms,
-                        "note": "Use interval_ms to poll this piece in realtime_stream mode.",
-                    }
-                    if output_mode == "realtime_stream"
-                    else {}
-                ),
-            },
-        )
+                        "start_at_utc": start_at.astimezone(timezone.utc).isoformat(),
+                    },
+                    "stream_hint": (
+                        {
+                            "interval_ms": interval_ms,
+                            "note": "Use interval_ms to poll this piece in realtime_stream mode.",
+                        }
+                        if output_mode == "realtime_stream"
+                        else {}
+                    ),
+                },
+            )
+        except Exception:
+            self.logger.exception(
+                "SyntheticDataGeneratorPiece failed. " "input_payload=%s",
+                payload,
+            )
+            raise
