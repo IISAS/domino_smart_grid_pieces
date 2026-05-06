@@ -284,16 +284,14 @@
             "additionalProperties": true,
             "properties": {
                 "dataset_type": {
-                    "anyOf": [
+                    "allOf": [
                         {
                             "$ref": "#/$defs/DatasetType"
-                        },
-                        {
-                            "type": "null"
                         }
                     ],
-                    "default": null,
-                    "description": "Type of generated dataset: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine`"
+                    "default": "solargis",
+                    "description": "Type of generated dataset.",
+                    "title": "Dataset Type"
                 },
                 "output_mode": {
                     "allOf": [
@@ -302,7 +300,8 @@
                         }
                     ],
                     "default": "batch_sample",
-                    "description": "Generation mode: `batch_sample`, `realtime_stream`"
+                    "description": "Generation mode.",
+                    "title": "Output Mode"
                 },
                 "records_count": {
                     "default": 20,
