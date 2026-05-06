@@ -1,20 +1,35 @@
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from enum import Enum
+from typing import Optional
+
+
+class DatasetType(str, Enum):
+    SOLARGIS = "solargis"
+    MICROSTEP = "microstep"
+    SHMU = "shmu"
+    OKTE = "okte"
+    BATTERY = "battery"
+    MACHINE = "machine"
+
+
+class OutputMode(str, Enum):
+    BATCH_SAMPLE = "batch_sample"
+    REALTIME_STREAM = "realtime_stream"
 
 
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    dataset_type: str | None = Field(
+    dataset_type: DatasetType | None = Field(
         default=None,
         description=(
             "Type of generated dataset: "
-            "`solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` "
-            "(also accepts long names like `SolarGIS Dataset`)."
+            f"{', '.join([f'`{e.value}`' for e in DatasetType])}"
         ),
     )
-    output_mode: str = Field(
-        default="batch_sample",
-        description="Generation mode: `batch_sample` or `realtime_stream`.",
+    output_mode: OutputMode = Field(
+        default=OutputMode.BATCH_SAMPLE,
+        description=f"Generation mode: {', '.join([f'`{e.value}`' for e in OutputMode])}",
     )
     records_count: int = Field(
         default=20,
@@ -57,8 +72,4 @@ class InputModel(BaseModel):
 
 
 class OutputModel(BaseModel):
-    message: str = Field(description="Human-readable status message.")
-    artifacts: dict = Field(
-        default_factory=dict,
-        description="Generated records and generation metadata.",
-    )
+    file_path: Optional[str] = Field(default=None, title="Dataset file path")

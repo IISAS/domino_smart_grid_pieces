@@ -153,9 +153,9 @@ class SyntheticDataGeneratorPiece(BasePiece):
 
         try:
             if not payload.get("dataset_type"):
+                self.logger.warning("No dataset_type provided. Returning empty output.")
                 return OutputModel(
-                    message="SyntheticDataGeneratorPiece executed (no-op).",
-                    artifacts={"input_payload": payload},
+                    file_path=None,
                 )
 
             raw_dataset_type = str(payload.get("dataset_type")).strip().lower()
@@ -215,57 +215,27 @@ class SyntheticDataGeneratorPiece(BasePiece):
                     return _battery_record(ts)
                 return _machine_record(ts)
 
+            self.logger.info("Setup of configuration completed.")
+
+            self.logger.info("Starting data generation.")
             synthesizer = TimeSeriesDatasetSynthesizer(
                 factory=_factory, start_at=start_at, step_minutes=time_step_minutes
             )
+            self.logger.info("Data generation completed.")
 
             records = [synthesizer.next_sample() for _ in range(records_count)]
 
-            # Display records in a Domino GUI
-            self.display_result = {
-                "dataset_type": dataset_type,
-                "output_mode": output_mode,
-                "records_count": records_count,
-                "time_step_minutes": time_step_minutes,
-                "interval_ms": interval_ms,
-                "start_at_utc": start_at.astimezone(timezone.utc).isoformat(),
-                "stream_hint": (
-                    {
-                        "interval_ms": interval_ms,
-                        "note": "Use interval_ms to poll this piece in realtime_stream mode.",
-                    }
-                    if output_mode == "realtime_stream"
-                    else {}
-                ),
-                "records": records,
-            }
-
             if output_mode == "batch_sample":
+                self.logger.info("Saving dataset to file.")
                 file_path = str(Path(self.results_path) / "dataset.json")
                 with open(file_path, "w") as f:
                     f.write(json.dumps(records, indent=4))
 
+            # Display records in a Domino GUI
+            self.display_result = {"file_type": "json", "file_path": file_path}
+
             return OutputModel(
-                message="SyntheticDataGeneratorPiece executed.",
-                artifacts={
-                    "dataset_type": dataset_type,
-                    "output_mode": output_mode,
-                    "records": records,
-                    "generation_config": {
-                        "records_count": records_count,
-                        "time_step_minutes": time_step_minutes,
-                        "interval_ms": interval_ms,
-                        "start_at_utc": start_at.astimezone(timezone.utc).isoformat(),
-                    },
-                    "stream_hint": (
-                        {
-                            "interval_ms": interval_ms,
-                            "note": "Use interval_ms to poll this piece in realtime_stream mode.",
-                        }
-                        if output_mode == "realtime_stream"
-                        else {}
-                    ),
-                },
+                file_path=file_path,
             )
         except Exception:
             self.logger.exception(
