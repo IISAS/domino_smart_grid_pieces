@@ -259,26 +259,50 @@
             }
         },
         "input_schema": {
+            "$defs": {
+                "DatasetType": {
+                    "enum": [
+                        "solargis",
+                        "microstep",
+                        "shmu",
+                        "okte",
+                        "battery",
+                        "machine"
+                    ],
+                    "title": "DatasetType",
+                    "type": "string"
+                },
+                "OutputMode": {
+                    "enum": [
+                        "batch_sample",
+                        "realtime_stream"
+                    ],
+                    "title": "OutputMode",
+                    "type": "string"
+                }
+            },
             "additionalProperties": true,
             "properties": {
                 "dataset_type": {
                     "anyOf": [
                         {
-                            "type": "string"
+                            "$ref": "#/$defs/DatasetType"
                         },
                         {
                             "type": "null"
                         }
                     ],
                     "default": null,
-                    "description": "Type of generated dataset: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` (also accepts long names like `SolarGIS Dataset`).",
-                    "title": "Dataset Type"
+                    "description": "Type of generated dataset: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine`"
                 },
                 "output_mode": {
+                    "allOf": [
+                        {
+                            "$ref": "#/$defs/OutputMode"
+                        }
+                    ],
                     "default": "batch_sample",
-                    "description": "Generation mode: `batch_sample` or `realtime_stream`.",
-                    "title": "Output Mode",
-                    "type": "string"
+                    "description": "Generation mode: `batch_sample`, `realtime_stream`"
                 },
                 "records_count": {
                     "default": 20,
@@ -336,20 +360,19 @@
         },
         "output_schema": {
             "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Generated records and generation metadata.",
-                    "title": "Artifacts",
-                    "type": "object"
+                "file_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Dataset file path"
                 }
             },
-            "required": [
-                "message"
-            ],
             "title": "OutputModel",
             "type": "object"
         },
