@@ -1,3 +1,7 @@
+import json
+import os
+from pathlib import Path
+
 from domino.testing import piece_dry_run
 import pytest
 
@@ -7,7 +11,8 @@ def test_synthetic_data_generator_piece_smoke():
         "SyntheticDataGeneratorPiece",
         {},
     )
-    assert output_data["message"] is not None
+    assert "file_path" in output_data
+    assert output_data["file_path"] is None
 
 
 @pytest.mark.parametrize(
@@ -36,12 +41,17 @@ def test_synthetic_data_generator_piece_batch_all_dataset_types(
         },
     )
 
-    artifacts = output_data["artifacts"]
-    expected_dataset_type = "shmu" if dataset_type == "shmi" else dataset_type
-    assert artifacts["dataset_type"] == expected_dataset_type
-    assert artifacts["output_mode"] == "batch_sample"
-    assert len(artifacts["records"]) == 5
-    assert required_key in artifacts["records"][0]
+    file_path = output_data["file_path"]
+    assert file_path is not None
+    assert file_path.endswith(".json")
+
+    # In HTTP dry-run mode, returned path can be container-local.
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        return
+
+    records = json.loads(Path(file_path).read_text(encoding="utf-8"))
+    assert len(records) == 5
+    assert required_key in records[0]
 
 
 def test_synthetic_data_generator_piece_realtime_mode():
@@ -56,8 +66,13 @@ def test_synthetic_data_generator_piece_realtime_mode():
             "seed": 7,
         },
     )
-    artifacts = output_data["artifacts"]
-    assert artifacts["dataset_type"] == "solargis"
-    assert artifacts["output_mode"] == "realtime_stream"
-    assert len(artifacts["records"]) == 3
-    assert artifacts["stream_hint"]["interval_ms"] == 1000
+    file_path = output_data["file_path"]
+    assert file_path is not None
+    assert file_path.endswith(".json")
+
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        return
+
+    records = json.loads(Path(file_path).read_text(encoding="utf-8"))
+    assert len(records) == 3
+    assert "GHI" in records[0]

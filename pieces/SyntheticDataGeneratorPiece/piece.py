@@ -225,11 +225,15 @@ class SyntheticDataGeneratorPiece(BasePiece):
 
             records = [synthesizer.next_sample() for _ in range(records_count)]
 
-            if output_mode == "batch_sample":
-                self.logger.info("Saving dataset to file.")
-                file_path = str(Path(self.results_path) / "dataset.json")
-                with open(file_path, "w") as f:
-                    f.write(json.dumps(records, indent=4))
+            self.logger.info("Saving dataset to file.")
+            file_name = (
+                "dataset_stream.json"
+                if output_mode == "realtime_stream"
+                else "dataset_batch.json"
+            )
+            file_path = str(Path(self.results_path) / file_name)
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(json.dumps(records, indent=4))
 
             # Display records in a Domino GUI
             self.display_result = {"file_type": "json", "file_path": file_path}

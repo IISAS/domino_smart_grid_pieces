@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from enum import Enum
-from typing import Optional
+from typing import ClassVar, Optional
 
 
 class DatasetType(str, Enum):
@@ -19,6 +19,21 @@ class OutputMode(str, Enum):
 
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
+    _DATASET_TYPE_ALIASES: ClassVar[dict[str, str]] = {
+        "soalrgis": "solargis",
+        "soalrgis dataset": "solargis",
+        "solargis dataset": "solargis",
+        "solar_gis": "solargis",
+        "microstep meteorological data": "microstep",
+        "microstep_meteorological_data": "microstep",
+        "slovak hydrometeorological institute data": "shmu",
+        "slovak_hydrometeorological_institute_data": "shmu",
+        "dataset of battery parameters": "battery",
+        "dataset_of_battery_parameters": "battery",
+        "real time machine data": "machine",
+        "real_time_machine_data": "machine",
+        "shmi": "shmu",
+    }
 
     dataset_type: DatasetType | None = Field(
         default=None,
@@ -59,16 +74,29 @@ class InputModel(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _unwrap_payload(cls, data):
-        if isinstance(data, dict) and isinstance(data.get("payload"), dict):
+        if not isinstance(data, dict):
+            return data
+
+        if isinstance(data.get("payload"), dict):
             merged = dict(data["payload"])
             for key, value in data.items():
                 if key != "payload":
                     merged[key] = value
-            return merged
+            data = merged
+
+        dataset_type = data.get("dataset_type")
+        if dataset_type is not None:
+            normalized = str(dataset_type).strip().lower()
+            data["dataset_type"] = cls._DATASET_TYPE_ALIASES.get(normalized, normalized)
+
+        output_mode = data.get("output_mode")
+        if output_mode is not None:
+            data["output_mode"] = str(output_mode).strip().lower()
+
         return data
 
     def to_payload_dict(self) -> dict:
-        return self.model_dump(exclude_none=True, exclude_defaults=True)
+        return self.model_dump(mode="json", exclude_none=True, exclude_defaults=True)
 
 
 class OutputModel(BaseModel):
