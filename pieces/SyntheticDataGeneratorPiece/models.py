@@ -4,47 +4,31 @@ from typing import ClassVar, Optional
 
 
 class DatasetType(str, Enum):
-    SOLARGIS = "solargis"
-    MICROSTEP = "microstep"
-    SHMU = "shmu"
-    OKTE = "okte"
-    BATTERY = "battery"
-    MACHINE = "machine"
+    solargis = "solargis"
+    microstep = "microstep"
+    shmu = "shmu"
+    okte = "okte"
+    battery = "battery"
+    machine = "machine"
 
 
 class OutputMode(str, Enum):
-    BATCH_SAMPLE = "batch_sample"
-    REALTIME_STREAM = "realtime_stream"
+    batch_sample = "batch_sample"
+    realtime_stream = "realtime_stream"
 
 
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
-    _DATASET_TYPE_ALIASES: ClassVar[dict[str, str]] = {
-        "soalrgis": "solargis",
-        "soalrgis dataset": "solargis",
-        "solargis dataset": "solargis",
-        "solar_gis": "solargis",
-        "microstep meteorological data": "microstep",
-        "microstep_meteorological_data": "microstep",
-        "slovak hydrometeorological institute data": "shmu",
-        "slovak_hydrometeorological_institute_data": "shmu",
-        "dataset of battery parameters": "battery",
-        "dataset_of_battery_parameters": "battery",
-        "real time machine data": "machine",
-        "real_time_machine_data": "machine",
-        "shmi": "shmu",
-    }
 
-    dataset_type: DatasetType | None = Field(
-        default=None,
-        description=(
-            "Type of generated dataset: "
-            f"{', '.join([f'`{e.value}`' for e in DatasetType])}"
-        ),
+    dataset_type: DatasetType = Field(
+        default="solargis",
+        title="Dataset Type",
+        description="Type of generated dataset.",
     )
     output_mode: OutputMode = Field(
-        default=OutputMode.BATCH_SAMPLE,
-        description=f"Generation mode: {', '.join([f'`{e.value}`' for e in OutputMode])}",
+        default="batch_sample",
+        title="Output Mode",
+        description="Generation mode.",
     )
     records_count: int = Field(
         default=20,
