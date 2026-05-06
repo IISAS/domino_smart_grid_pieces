@@ -2,6 +2,8 @@ import math
 import random
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
+from pathlib import Path
+import json
 
 from domino.base_piece import BasePiece
 
@@ -218,6 +220,30 @@ class SyntheticDataGeneratorPiece(BasePiece):
             )
 
             records = [synthesizer.next_sample() for _ in range(records_count)]
+
+            # Display records in a Domino GUI
+            self.display_result = {
+                "dataset_type": dataset_type,
+                "output_mode": output_mode,
+                "records_count": records_count,
+                "time_step_minutes": time_step_minutes,
+                "interval_ms": interval_ms,
+                "start_at_utc": start_at.astimezone(timezone.utc).isoformat(),
+                "stream_hint": (
+                    {
+                        "interval_ms": interval_ms,
+                        "note": "Use interval_ms to poll this piece in realtime_stream mode.",
+                    }
+                    if output_mode == "realtime_stream"
+                    else {}
+                ),
+                "records": records,
+            }
+
+            if output_mode == "batch_sample":
+                file_path = str(Path(self.results_path) / "dataset.json")
+                with open(file_path, "w") as f:
+                    f.write(json.dumps(records, indent=4))
 
             return OutputModel(
                 message="SyntheticDataGeneratorPiece executed.",
