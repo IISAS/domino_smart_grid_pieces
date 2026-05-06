@@ -1,6 +1,22 @@
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from enum import Enum
-from typing import ClassVar, Optional
+from typing import Optional
+
+DATASET_TYPE_ALIASES: dict[str, str] = {
+    "soalrgis": "solargis",
+    "soalrgis dataset": "solargis",
+    "solargis dataset": "solargis",
+    "solar_gis": "solargis",
+    "microstep meteorological data": "microstep",
+    "microstep_meteorological_data": "microstep",
+    "slovak hydrometeorological institute data": "shmu",
+    "slovak_hydrometeorological_institute_data": "shmu",
+    "dataset of battery parameters": "battery",
+    "dataset_of_battery_parameters": "battery",
+    "real time machine data": "machine",
+    "real_time_machine_data": "machine",
+    "shmi": "shmu",
+}
 
 
 class DatasetType(str, Enum):
@@ -71,7 +87,7 @@ class InputModel(BaseModel):
         dataset_type = data.get("dataset_type")
         if dataset_type is not None:
             normalized = str(dataset_type).strip().lower()
-            data["dataset_type"] = cls._DATASET_TYPE_ALIASES.get(normalized, normalized)
+            data["dataset_type"] = DATASET_TYPE_ALIASES.get(normalized, normalized)
 
         output_mode = data.get("output_mode")
         if output_mode is not None:
@@ -80,7 +96,7 @@ class InputModel(BaseModel):
         return data
 
     def to_payload_dict(self) -> dict:
-        return self.model_dump(mode="json", exclude_none=True, exclude_defaults=True)
+        return self.model_dump(mode="json", exclude_none=True, exclude_unset=True)
 
 
 class OutputModel(BaseModel):
