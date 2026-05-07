@@ -2,7 +2,7 @@
   "name": "DataPreprocessingPiece",
   "description": "Template piece for cleaning, validating, and preprocessing input data prior to feature engineering or training.",
   "dependency": {
-    "requirements_file": "requirements_0.txt"
+    "requirements_file": "requirements_4.txt"
   },
   "container_resources": {
     "requests": {
