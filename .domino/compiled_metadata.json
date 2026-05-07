@@ -259,48 +259,32 @@
             }
         },
         "input_schema": {
-            "$defs": {
-                "DatasetType": {
-                    "enum": [
-                        "solargis",
-                        "microstep",
-                        "shmu",
-                        "okte",
-                        "battery",
-                        "machine"
-                    ],
-                    "title": "DatasetType",
-                    "type": "string"
-                },
-                "OutputMode": {
-                    "enum": [
-                        "batch_sample",
-                        "realtime_stream"
-                    ],
-                    "title": "OutputMode",
-                    "type": "string"
-                }
-            },
             "additionalProperties": true,
             "properties": {
                 "dataset_type": {
-                    "allOf": [
+                    "anyOf": [
                         {
-                            "$ref": "#/$defs/DatasetType"
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
                         }
                     ],
-                    "default": "solargis",
-                    "description": "Type of generated dataset.",
+                    "default": null,
+                    "description": "One of: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` (aliases like `SoalrGIS Dataset` and `shmi` are also accepted).",
                     "title": "Dataset Type"
                 },
                 "output_mode": {
-                    "allOf": [
+                    "anyOf": [
                         {
-                            "$ref": "#/$defs/OutputMode"
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
                         }
                     ],
-                    "default": "batch_sample",
-                    "description": "Generation mode.",
+                    "default": null,
+                    "description": "One of: `batch_sample`, `realtime_stream`.",
                     "title": "Output Mode"
                 },
                 "records_count": {
