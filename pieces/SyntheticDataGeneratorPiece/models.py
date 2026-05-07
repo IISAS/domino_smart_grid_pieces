@@ -1,5 +1,4 @@
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from enum import Enum
 from typing import Optional
 
 DATASET_TYPE_ALIASES: dict[str, str] = {
@@ -19,32 +18,21 @@ DATASET_TYPE_ALIASES: dict[str, str] = {
 }
 
 
-class DatasetType(str, Enum):
-    solargis = "solargis"
-    microstep = "microstep"
-    shmu = "shmu"
-    okte = "okte"
-    battery = "battery"
-    machine = "machine"
-
-
-class OutputMode(str, Enum):
-    batch_sample = "batch_sample"
-    realtime_stream = "realtime_stream"
-
-
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    dataset_type: DatasetType = Field(
-        default="solargis",
+    dataset_type: str | None = Field(
+        default=None,
         title="Dataset Type",
-        description="Type of generated dataset.",
+        description=(
+            "One of: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` "
+            "(aliases like `SoalrGIS Dataset` and `shmi` are also accepted)."
+        ),
     )
-    output_mode: OutputMode = Field(
-        default="batch_sample",
+    output_mode: str | None = Field(
+        default=None,
         title="Output Mode",
-        description="Generation mode.",
+        description="One of: `batch_sample`, `realtime_stream`.",
     )
     records_count: int = Field(
         default=20,
