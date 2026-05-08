@@ -5,28 +5,12 @@
             "requirements_file": "requirements_0.txt"
         },
         "pieces": [
-            "EvaluateMLModelPiece",
-            "DataNormalizationPiece",
-            "SyntheticDataGeneratorPiece",
-            "ModelDeciderPiece",
-            "ExplainablePredictionPiece"
+            "SyntheticDataGeneratorPiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:development-group0"
     },
     "group1": {
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_1.txt"
-        },
-        "pieces": [
-            "InferencePiece",
-            "PVOUTErrorCorrectionModelTrainPiece"
-        ],
-        "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:development-group1"
-    },
-    "group2": {
         "dependency": {
             "dockerfile": null,
             "requirements_file": "requirements_4.txt"
@@ -35,28 +19,6 @@
             "DataPreprocessingPiece"
         ],
         "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:development-group2"
-    },
-    "group3": {
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_3.txt"
-        },
-        "pieces": [
-            "ElectricityPricePredictionModelTrainPiece"
-        ],
-        "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:development-group3"
-    },
-    "group4": {
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_2.txt"
-        },
-        "pieces": [
-            "PVOUTPredictionModelTrainPiece"
-        ],
-        "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:development-group4"
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:development-group1"
     }
 }
