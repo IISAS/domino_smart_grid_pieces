@@ -2,8 +2,11 @@ from domino.testing import piece_dry_run
 import pytest
 import os
 import pandas as pd
+import sys
+from pathlib import Path
 
-from pieces.DataPreprocessingPiece.utils.modes import preprocess_prediction
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from utils.modes import preprocess_prediction
 
 
 def test_data_preprocessing_piece_smoke():
