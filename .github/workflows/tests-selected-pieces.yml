@@ -60,9 +60,20 @@ jobs:
               HEAD_SHA="${{ github.sha }}"
             fi
 
-            PIECES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
+            if [[ -z "${BASE_SHA:-}" || "$BASE_SHA" =~ ^0+$ ]] || ! git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+              if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+                BASE_SHA="$(git rev-parse HEAD~1)"
+              else
+                # First commit in branch/repository: test all available pieces.
+                PIECES="$(ls -1 pieces)"
+              fi
+            fi
+
+            if [[ -z "${PIECES:-}" ]]; then
+              PIECES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
               | awk -F/ '/^pieces\/[^/]+\// {print $2}' \
               | sort -u)"
+            fi
           fi
 
           if [[ -z "$PIECES" ]]; then
