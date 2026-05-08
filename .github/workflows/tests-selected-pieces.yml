@@ -10,11 +10,6 @@ on:
   push:
     branches:
       - dev
-    paths:
-      - "pieces/**"
-      - "requirements-tests.txt"
-      - "dependencies/**"
-      - "run_all_tests.sh"
   pull_request:
     branches:
       - main
