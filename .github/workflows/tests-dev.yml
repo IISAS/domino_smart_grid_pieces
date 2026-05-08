@@ -1,6 +1,15 @@
 name: Run tests on dev branch
 
 on:
+  push:
+    branches:
+      - dev
+    paths:
+      - "config.toml"
+      - "pieces/**"
+      - "dependencies/**"
+      - "requirements-tests.txt"
+      - "run_all_tests.sh"
   workflow_dispatch:
 
 jobs:
