@@ -19,6 +19,7 @@ on:
       - "requirements-tests.txt"
       - "dependencies/**"
       - "run_all_tests.sh"
+      - ".ci/skip-pieces.txt"
 
 jobs:
   detect-pieces:
@@ -72,6 +73,34 @@ jobs:
           fi
 
           if [[ -z "$PIECES" ]]; then
+            echo "pieces=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SKIP_FILE=".ci/skip-pieces.txt"
+          if [[ -f "$SKIP_FILE" ]]; then
+            declare -A SKIP_SET
+            while IFS= read -r skip_piece; do
+              skip_piece="$(echo "$skip_piece" | sed 's/#.*//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+              [[ -z "$skip_piece" ]] && continue
+              SKIP_SET["$skip_piece"]=1
+            done < "$SKIP_FILE"
+
+            FILTERED_PIECES=""
+            while IFS= read -r piece; do
+              [[ -z "$piece" ]] && continue
+              if [[ -z "${SKIP_SET[$piece]+x}" ]]; then
+                FILTERED_PIECES+="${piece}"$'\n'
+              else
+                echo "Skipping piece from config: $piece"
+              fi
+            done <<< "$PIECES"
+
+            PIECES="$(printf '%s' "$FILTERED_PIECES" | sed '/^$/d' | sort -u)"
+          fi
+
+          if [[ -z "$PIECES" ]]; then
+            echo "All selected pieces are skipped by config."
             echo "pieces=[]" >> "$GITHUB_OUTPUT"
             exit 0
           fi

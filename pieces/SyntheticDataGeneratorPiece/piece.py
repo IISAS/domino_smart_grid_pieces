@@ -234,6 +234,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
             file_path = str(Path(self.results_path) / file_name)
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(json.dumps(records, indent=4))
+            self.logger.info("Dataset saved to file at %s", file_path)
 
             # Display records in a Domino GUI
             self.display_result = {"file_type": "json", "file_path": file_path}

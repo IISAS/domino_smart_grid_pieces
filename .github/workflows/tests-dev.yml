@@ -10,6 +10,7 @@ on:
       - "dependencies/**"
       - "requirements-tests.txt"
       - "run_all_tests.sh"
+      - ".ci/skip-pieces.txt"
   workflow_dispatch:
 
 jobs:
@@ -26,6 +27,25 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: "3.10"
+
+      - name: Apply skip-pieces config
+        shell: bash
+        run: |
+          set -euo pipefail
+          SKIP_FILE=".ci/skip-pieces.txt"
+          if [[ ! -f "$SKIP_FILE" ]]; then
+            echo "No skip config found."
+            exit 0
+          fi
+
+          while IFS= read -r piece; do
+            piece="$(echo "$piece" | sed 's/#.*//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            [[ -z "$piece" ]] && continue
+            if [[ -d "pieces/$piece" ]]; then
+              echo "Skipping piece in build/test: $piece"
+              rm -rf "pieces/$piece"
+            fi
+          done < "$SKIP_FILE"
 
       - name: Pip install packages
         run: |

@@ -1,0 +1,14 @@
+# One piece directory name per line.
+# These pieces will be skipped in CI build and tests.
+#
+# Example:
+# DataPreprocessingPiece
+
+DataNormalizationPiece
+ElectricityPricePredictionModelTrainPiece
+EvaluateMLModelPiece
+ExplainablePredictionPiece
+InferencePiece
+ModelDeciderPiece
+PVOUTErrorCorrectionModelTrainPiece
+PVOUTPredictionModelTrainPiece
