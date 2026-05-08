@@ -1,3 +1,24 @@
+def _resolve_features(payload, data, *, target_columns=None):
+    configured_features = payload.get("preprocessor_features")
+    if configured_features:
+        return list(configured_features)
+
+    excluded = set(target_columns or [])
+    auto_features = [column for column in data.columns if column not in excluded]
+    if not auto_features:
+        raise ValueError(
+            "Could not infer feature columns. Provide `preprocessor_features` in payload."
+        )
+    return auto_features
+
+
+def _read_input_dataframe(payload):
+    for key in ("dataframe", "X", "data"):
+        if payload.get(key) is not None:
+            return payload.get(key)
+    return None
+
+
 def preprocess_prediction(payload):
     import os
     import pandas as pd  # type: ignore
@@ -5,11 +26,10 @@ def preprocess_prediction(payload):
     from .preprocessor_utils import flag_each_day, preprocess_solargis_data
     from .serialization import to_jsonable_df
 
-    df = payload.get("dataframe") or payload.get("X") or payload.get("data")
+    df = _read_input_dataframe(payload)
     data_path = payload.get("data_path")
     save_data_path = payload.get("save_data_path")
     flag_each_day_enabled = bool(payload.get("flag_each_day", False))
-    preprocessor_features = payload["preprocessor_features"]
     keep_datetime = bool(payload.get("keep_datetime", False))
 
     if df is None:
@@ -36,7 +56,7 @@ def preprocess_prediction(payload):
         os.makedirs(os.path.dirname(save_data_path), exist_ok=True)
         data.to_csv(save_data_path, index=False)
 
-    features = list(preprocessor_features)
+    features = _resolve_features(payload, data, target_columns=["PVOUT"])
     if keep_datetime and "datetime" in data.columns and "datetime" not in features:
         features = ["datetime"] + features
 
@@ -61,12 +81,10 @@ def preprocess_correction(payload):
     from .preprocessor_utils import flag_each_day, preprocess_solargis_data
     from .serialization import to_jsonable_df
 
-    df = payload.get("dataframe") or payload.get("X") or payload.get("data")
+    df = _read_input_dataframe(payload)
     data_path = payload.get("data_path")
     save_data_path = payload.get("save_data_path")
     flag_each_day_enabled = bool(payload.get("flag_each_day", False))
-    preprocessor_features = payload["preprocessor_features"]
-
     test_size = payload.get("test_size")  # optional
     load_all_data = bool(payload.get("load_all_data", False))
 
@@ -133,7 +151,9 @@ def preprocess_correction(payload):
         pred_sequence_one.to_csv(f"{root}_pred{ext}", index=False)
         true_sequence_one.to_csv(f"{root}_true{ext}", index=False)
 
-    features = list(preprocessor_features)
+    features = _resolve_features(
+        payload, pred_sequence_one, target_columns=["true_pvout"]
+    )
     if "datetime" not in features:
         features.append("datetime")
     if (

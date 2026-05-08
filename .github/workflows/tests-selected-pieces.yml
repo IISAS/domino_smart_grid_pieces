@@ -1,0 +1,119 @@
+name: Test selected pieces quickly
+
+on:
+  workflow_dispatch:
+    inputs:
+      pieces:
+        description: "Comma-separated piece directories to test (e.g. DataPreprocessingPiece,InferencePiece)"
+        required: false
+        type: string
+  push:
+    branches:
+      - dev
+    paths:
+      - "pieces/**"
+      - "requirements-tests.txt"
+      - "dependencies/**"
+      - "run_all_tests.sh"
+  pull_request:
+    branches:
+      - main
+      - dev
+    paths:
+      - "pieces/**"
+      - "requirements-tests.txt"
+      - "dependencies/**"
+      - "run_all_tests.sh"
+
+jobs:
+  detect-pieces:
+    runs-on: ubuntu-latest
+    outputs:
+      pieces: ${{ steps.collect.outputs.pieces }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect selected piece names
+        id: collect
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          normalize_list() {
+            tr ',' '\n' \
+              | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+              | sed '/^$/d' \
+              | sort -u
+          }
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.pieces }}" ]]; then
+            PIECES="$(printf '%s' "${{ inputs.pieces }}" | normalize_list)"
+          else
+            if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+              BASE_SHA="${{ github.event.pull_request.base.sha }}"
+              HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+            else
+              BASE_SHA="${{ github.event.before }}"
+              HEAD_SHA="${{ github.sha }}"
+            fi
+
+            PIECES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" \
+              | awk -F/ '/^pieces\/[^/]+\// {print $2}' \
+              | sort -u)"
+          fi
+
+          if [[ -z "$PIECES" ]]; then
+            echo "pieces=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PIECES_JSON="$(printf '%s\n' "$PIECES" | jq -R . | jq -s -c .)"
+          echo "Detected pieces: $PIECES_JSON"
+          echo "pieces=$PIECES_JSON" >> "$GITHUB_OUTPUT"
+
+  run-selected-tests:
+    needs: detect-pieces
+    if: ${{ needs.detect-pieces.outputs.pieces != '[]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements-tests.txt
+            dependencies/*.txt
+
+      - name: Run tests only for selected pieces
+        shell: bash
+        env:
+          PIECES_JSON: ${{ needs.detect-pieces.outputs.pieces }}
+        run: |
+          set -euo pipefail
+          mapfile -t PIECES < <(echo "$PIECES_JSON" | jq -r '.[]')
+
+          TEST_TARGETS=()
+          for piece in "${PIECES[@]}"; do
+            shopt -s nullglob
+            TEST_FILES=(pieces/"$piece"/test_*.py)
+            shopt -u nullglob
+            if [[ ${#TEST_FILES[@]} -eq 0 ]]; then
+              echo "No tests found for $piece, skipping."
+              continue
+            fi
+            TEST_TARGETS+=("${TEST_FILES[@]}")
+          done
+
+          if [[ ${#TEST_TARGETS[@]} -eq 0 ]]; then
+            echo "No test files detected for selected pieces."
+            exit 0
+          fi
+
+          ./run_all_tests.sh "${TEST_TARGETS[@]}"

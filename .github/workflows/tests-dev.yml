@@ -1,9 +1,7 @@
 name: Run tests on dev branch
 
 on:
-  push:
-    branches:
-      - dev
+  workflow_dispatch:
 
 jobs:
   run-tests-dev:
