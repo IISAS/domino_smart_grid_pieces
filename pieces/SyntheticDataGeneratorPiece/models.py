@@ -17,6 +17,11 @@ DATASET_TYPE_ALIASES: dict[str, str] = {
     "shmi": "shmu",
 }
 
+OUTPUT_FORMAT_ALIASES: dict[str, str] = {
+    "json": "json",
+    "csv": "csv",
+}
+
 
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
@@ -33,6 +38,11 @@ class InputModel(BaseModel):
         default=None,
         title="Output Mode",
         description="One of: `batch_sample`, `realtime_stream`.",
+    )
+    output_format: str | None = Field(
+        default=None,
+        title="Output Format",
+        description="One of: `json`, `csv`.",
     )
     records_count: int = Field(
         default=20,
@@ -80,6 +90,13 @@ class InputModel(BaseModel):
         output_mode = data.get("output_mode")
         if output_mode is not None:
             data["output_mode"] = str(output_mode).strip().lower()
+
+        output_format = data.get("output_format")
+        if output_format is not None:
+            normalized_format = str(output_format).strip().lower()
+            data["output_format"] = OUTPUT_FORMAT_ALIASES.get(
+                normalized_format, normalized_format
+            )
 
         return data
 

@@ -28,24 +28,31 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Apply skip-pieces config
+      - name: Prepare filtered workspace (non-destructive)
         shell: bash
         run: |
           set -euo pipefail
+          CI_WORKDIR="$RUNNER_TEMP/filtered_repo"
+          rm -rf "$CI_WORKDIR"
+          mkdir -p "$CI_WORKDIR"
+          rsync -a --exclude ".git" ./ "$CI_WORKDIR"/
+
+          echo "CI_WORKDIR=$CI_WORKDIR" >> "$GITHUB_ENV"
+
           SKIP_FILE=".ci/skip-pieces.txt"
-          if [[ ! -f "$SKIP_FILE" ]]; then
-            echo "No skip config found."
+          if [[ ! -f "$CI_WORKDIR/$SKIP_FILE" ]]; then
+            echo "No skip config found. Using full workspace."
             exit 0
           fi
 
           while IFS= read -r piece; do
             piece="$(echo "$piece" | sed 's/#.*//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
             [[ -z "$piece" ]] && continue
-            if [[ -d "pieces/$piece" ]]; then
+            if [[ -d "$CI_WORKDIR/pieces/$piece" ]]; then
               echo "Skipping piece in build/test: $piece"
-              rm -rf "pieces/$piece"
+              rm -rf "$CI_WORKDIR/pieces/$piece"
             fi
-          done < "$SKIP_FILE"
+          done < "$CI_WORKDIR/$SKIP_FILE"
 
       - name: Pip install packages
         run: |
@@ -63,14 +70,17 @@ jobs:
         run: pip list | grep domino
 
       - name: Run organize and build images
+        working-directory: ${{ env.CI_WORKDIR }}
         run: |
           domino piece organize --build-images --source-url=https://github.com/${{github.repository}} --tag-overwrite=development
 
       - name: Install Tests Dependencies
+        working-directory: ${{ env.CI_WORKDIR }}
         run: pip install -r requirements-tests.txt
 
       # Remember to pass any necessary secrets as env vars here
       - name: Run tests over built images
+        working-directory: ${{ env.CI_WORKDIR }}
         env:
           DOMINO_TESTS_ENVIRONMENT: github
           PIECE_SECRET_1: ${{ secrets.PIECE_SECRET_1 }}
@@ -84,9 +94,19 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Publish images
+        working-directory: ${{ env.CI_WORKDIR }}
         env:
           GHCR_USERNAME: ${{ github.actor }}
         run: domino piece publish-images --registry-token ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync generated domino metadata back
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -d "${CI_WORKDIR}/.domino" ]]; then
+            rm -rf .domino
+            cp -R "${CI_WORKDIR}/.domino" .domino
+          fi
 
       - name: Commit files
         id: commit_files

@@ -1,5 +1,6 @@
 import math
 import random
+import csv
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 from pathlib import Path
@@ -175,6 +176,9 @@ class SyntheticDataGeneratorPiece(BasePiece):
                 raise ValueError(
                     "output_mode must be `batch_sample` or `realtime_stream`."
                 )
+            output_format = str(payload.get("output_format", "json")).strip().lower()
+            if output_format not in {"json", "csv"}:
+                raise ValueError("output_format must be `json` or `csv`.")
 
             records_count = int(payload.get("records_count", 20))
             if records_count <= 0:
@@ -226,14 +230,46 @@ class SyntheticDataGeneratorPiece(BasePiece):
             records = [synthesizer.next_sample() for _ in range(records_count)]
 
             self.logger.info("Saving dataset to file.")
-            file_name = (
-                "dataset_stream.json"
-                if output_mode == "realtime_stream"
-                else "dataset_batch.json"
-            )
+            file_suffix = "stream" if output_mode == "realtime_stream" else "batch"
+            file_name = f"dataset_{file_suffix}.{output_format}"
             file_path = str(Path(self.results_path) / file_name)
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(json.dumps(records, indent=4))
+
+            if output_format == "json":
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(json.dumps(records, indent=4))
+            else:
+                if dataset_type == "solargis":
+                    fieldnames = [
+                        "Date",
+                        "Time",
+                        "GHI",
+                        "DNI",
+                        "DIF",
+                        "GTI",
+                        "SE",
+                        "SA",
+                        "PVOUT",
+                        "TEMP",
+                        "WS",
+                        "WG",
+                        "WD",
+                        "RH",
+                        "AP",
+                        "PVOUT_UNC_LOW",
+                        "PVOUT_UNC_HIGH",
+                    ]
+                else:
+                    fieldnames = list(records[0].keys()) if records else []
+
+                with open(file_path, "w", encoding="utf-8", newline="") as csvfile:
+                    writer = csv.DictWriter(
+                        csvfile,
+                        fieldnames=fieldnames,
+                        delimiter=";",
+                        extrasaction="ignore",
+                    )
+                    writer.writeheader()
+                    writer.writerows(records)
             self.logger.info("Dataset saved to file at %s", file_path)
 
             # Display records in a Domino GUI

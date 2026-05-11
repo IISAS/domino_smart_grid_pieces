@@ -1,5 +1,6 @@
 import json
 import os
+import csv
 from pathlib import Path
 
 from domino.testing import piece_dry_run
@@ -76,3 +77,47 @@ def test_synthetic_data_generator_piece_realtime_mode():
     records = json.loads(Path(file_path).read_text(encoding="utf-8"))
     assert len(records) == 3
     assert "GHI" in records[0]
+
+
+def test_synthetic_data_generator_piece_solargis_csv_output():
+    output_data = piece_dry_run(
+        "SyntheticDataGeneratorPiece",
+        {
+            "dataset_type": "solargis",
+            "output_mode": "batch_sample",
+            "output_format": "csv",
+            "records_count": 3,
+            "time_step_minutes": 15,
+            "seed": 123,
+        },
+    )
+    file_path = output_data["file_path"]
+    assert file_path is not None
+    assert file_path.endswith(".csv")
+
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        return
+
+    with open(file_path, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f, delimiter=";")
+        rows = list(reader)
+        assert len(rows) == 3
+        assert reader.fieldnames == [
+            "Date",
+            "Time",
+            "GHI",
+            "DNI",
+            "DIF",
+            "GTI",
+            "SE",
+            "SA",
+            "PVOUT",
+            "TEMP",
+            "WS",
+            "WG",
+            "WD",
+            "RH",
+            "AP",
+            "PVOUT_UNC_LOW",
+            "PVOUT_UNC_HIGH",
+        ]
