@@ -64,7 +64,11 @@ def preprocess_prediction(payload):
     import os
     import pandas as pd  # type: ignore
 
-    from .preprocessor_utils import flag_each_day, preprocess_solargis_data
+    from .preprocessor_utils import (
+        ensure_datetime_column,
+        flag_each_day,
+        preprocess_solargis_data,
+    )
     from .serialization import to_jsonable_df
 
     df = _read_input_dataframe(payload)
@@ -73,15 +77,43 @@ def preprocess_prediction(payload):
     flag_each_day_enabled = bool(payload.get("flag_each_day", False))
     keep_datetime = bool(payload.get("keep_datetime", False))
 
+    def _read_supported_csv(path: str):
+        read_attempts = [
+            {"sep": ";", "skiprows": 58, "dayfirst": True},
+            {"sep": ";", "skiprows": 0, "dayfirst": True},
+            {"sep": None, "engine": "python", "skiprows": 0, "dayfirst": True},
+            {"sep": None, "engine": "python", "skiprows": 58, "dayfirst": True},
+        ]
+        for kwargs in read_attempts:
+            try:
+                candidate = pd.read_csv(path, **kwargs)
+            except Exception:
+                continue
+            if "datetime" in candidate.columns or (
+                "Date" in candidate.columns and "Time" in candidate.columns
+            ):
+                return candidate
+        raise ValueError(
+            "Unable to read input CSV with supported schemas. "
+            "Expected either `datetime` or `Date`+`Time` columns."
+        )
+
     if df is None:
         if not data_path:
             raise ValueError(
                 "preprocessing_option='prediction' requires either `payload['dataframe']` "
                 "or `payload['data_path']`."
             )
+<<<<<<< HEAD
         df = _load_prediction_data(data_path)
 
     data = _ensure_datetime_column(df)
+=======
+        df = _read_supported_csv(data_path)
+
+    data = df
+    data = ensure_datetime_column(data)
+>>>>>>> b58c80e (fix for csv read preprocessing piece)
     if flag_each_day_enabled:
         data = flag_each_day(data)
 
@@ -113,7 +145,11 @@ def preprocess_correction(payload):
     import pandas as pd  # type: ignore
     from sklearn.model_selection import train_test_split  # type: ignore
 
-    from .preprocessor_utils import flag_each_day, preprocess_solargis_data
+    from .preprocessor_utils import (
+        ensure_datetime_column,
+        flag_each_day,
+        preprocess_solargis_data,
+    )
     from .serialization import to_jsonable_df
 
     df = _read_input_dataframe(payload)
@@ -127,23 +163,22 @@ def preprocess_correction(payload):
         # Special handling for PVOD-derived Solargis-like CSV.
         if os.path.basename(path).startswith("error_correction_pvod"):
             data = pd.read_csv(path)
-            if "datetime" in data.columns:
-                data["datetime"] = pd.to_datetime(data["datetime"])
+            data = ensure_datetime_column(data)
             if flag_each_day_enabled:
                 data = flag_each_day(data)
             return data
 
-        data = pd.read_csv(
-            path,
-            sep=";",
-            skiprows=58,
-            dayfirst=True,
-        )
-        if "Date" in data.columns and "Time" in data.columns:
-            data["datetime"] = pd.to_datetime(
-                data["Date"].astype(str) + " " + data["Time"].astype(str),
+        try:
+            data = pd.read_csv(
+                path,
+                sep=";",
+                skiprows=58,
                 dayfirst=True,
             )
+            data = ensure_datetime_column(data)
+        except ValueError:
+            data = pd.read_csv(path, sep=None, engine="python", dayfirst=True)
+            data = ensure_datetime_column(data)
         if flag_each_day_enabled:
             data = flag_each_day(data)
         return data
@@ -164,6 +199,8 @@ def preprocess_correction(payload):
             data = _load_single(data_path)
     else:
         data = df
+
+    data = ensure_datetime_column(data)
 
     # Separate true sequence one predictions from the rest
     true_sequence_one = data[data["pred_sequence_id"] == 1]
