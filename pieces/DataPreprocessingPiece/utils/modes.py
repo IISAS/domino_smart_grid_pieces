@@ -19,6 +19,47 @@ def _read_input_dataframe(payload):
     return None
 
 
+def _ensure_datetime_column(data):
+    import pandas as pd  # type: ignore
+
+    if "datetime" in data.columns:
+        return data
+    if "Date" in data.columns and "Time" in data.columns:
+        data = data.copy()
+        data["datetime"] = pd.to_datetime(
+            data["Date"].astype(str) + " " + data["Time"].astype(str),
+            dayfirst=True,
+            errors="coerce",
+        )
+        return data
+    if "timestamp_utc" in data.columns:
+        data = data.copy()
+        data["datetime"] = pd.to_datetime(data["timestamp_utc"], errors="coerce")
+        return data
+    return data
+
+
+def _load_prediction_data(path):
+    import pandas as pd  # type: ignore
+
+    if str(path).lower().endswith(".json"):
+        data = pd.read_json(path)
+        return _ensure_datetime_column(data)
+
+    try:
+        data = pd.read_csv(
+            path,
+            sep=";",
+            skiprows=58,
+            parse_dates={"datetime": ["Date", "Time"]},
+            dayfirst=True,
+        )
+        return data
+    except (ValueError, KeyError):
+        data = pd.read_csv(path)
+        return _ensure_datetime_column(data)
+
+
 def preprocess_prediction(payload):
     import os
     import pandas as pd  # type: ignore
@@ -38,15 +79,9 @@ def preprocess_prediction(payload):
                 "preprocessing_option='prediction' requires either `payload['dataframe']` "
                 "or `payload['data_path']`."
             )
-        df = pd.read_csv(
-            data_path,
-            sep=";",
-            skiprows=58,
-            parse_dates={"datetime": ["Date", "Time"]},
-            dayfirst=True,
-        )
+        df = _load_prediction_data(data_path)
 
-    data = df
+    data = _ensure_datetime_column(df)
     if flag_each_day_enabled:
         data = flag_each_day(data)
 

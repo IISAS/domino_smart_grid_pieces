@@ -62,3 +62,26 @@ def test_preprocess_prediction_infers_features_when_missing():
 
     assert "PVOUT" not in features
     assert "GHI" in features
+
+
+def test_preprocess_prediction_supports_solargis_date_time_columns():
+    payload = {
+        "dataframe": pd.DataFrame(
+            {
+                "Date": ["07.05.2026", "07.05.2026"],
+                "Time": ["10:00", "11:00"],
+                "GHI": [50.0, 60.0],
+                "DIF": [10.0, 15.0],
+                "SE": [20.0, 25.0],
+                "PVOUT": [30.0, 35.0],
+            }
+        ),
+        "preprocessing_option": "prediction",
+        "keep_datetime": True,
+    }
+
+    result = preprocess_prediction(payload)
+    features = result["artifacts"]["features"]
+
+    assert "datetime" in features
+    assert "GHI" in features
