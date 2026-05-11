@@ -104,6 +104,7 @@ class InputModel(BaseModel):
                     break
 
         dataset_type = data.get("dataset_type")
+        print(f"dataset_type: {dataset_type}")
         if dataset_type is not None:
             normalized = str(dataset_type).strip().lower()
             data["dataset_type"] = DATASET_TYPE_ALIASES.get(normalized, normalized)
