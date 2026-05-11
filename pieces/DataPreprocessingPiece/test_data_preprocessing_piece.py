@@ -5,12 +5,11 @@ import pandas as pd
 import sys
 from pathlib import Path
 
-from pieces.DataPreprocessingPiece.utils.preprocessor_utils import (
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from utils.preprocessor_utils import (
     ensure_datetime_column,
     preprocess_solargis_data,
 )
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 from utils.modes import preprocess_prediction
 
 
