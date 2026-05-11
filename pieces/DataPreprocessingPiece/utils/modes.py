@@ -104,16 +104,10 @@ def preprocess_prediction(payload):
                 "preprocessing_option='prediction' requires either `payload['dataframe']` "
                 "or `payload['data_path']`."
             )
-<<<<<<< HEAD
-        df = _load_prediction_data(data_path)
-
-    data = _ensure_datetime_column(df)
-=======
         df = _read_supported_csv(data_path)
 
     data = df
     data = ensure_datetime_column(data)
->>>>>>> b58c80e (fix for csv read preprocessing piece)
     if flag_each_day_enabled:
         data = flag_each_day(data)
 

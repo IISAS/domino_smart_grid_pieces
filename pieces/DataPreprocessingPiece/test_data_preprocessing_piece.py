@@ -1,21 +1,17 @@
 from domino.testing import piece_dry_run
 import os
-<<<<<<< HEAD
+import pytest
 import pandas as pd
 import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from utils.modes import preprocess_prediction
-=======
-import pytest
-import pandas as pd
 
 from pieces.DataPreprocessingPiece.utils.preprocessor_utils import (
     ensure_datetime_column,
     preprocess_solargis_data,
 )
->>>>>>> b58c80e (fix for csv read preprocessing piece)
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from utils.modes import preprocess_prediction
 
 
 def test_data_preprocessing_piece_smoke():
@@ -52,7 +48,6 @@ def test_data_preprocessing_piece_invalid_option_raises():
         )
 
 
-<<<<<<< HEAD
 def test_preprocess_prediction_infers_features_when_missing():
     payload = {
         "dataframe": pd.DataFrame(
@@ -95,7 +90,8 @@ def test_preprocess_prediction_supports_solargis_date_time_columns():
 
     assert "datetime" in features
     assert "GHI" in features
-=======
+
+
 def test_ensure_datetime_column_from_datetime_schema():
     data = pd.DataFrame(
         {
@@ -147,4 +143,3 @@ def test_preprocess_solargis_data_accepts_date_time_schema():
     out = preprocess_solargis_data(data)
     assert "datetime" in out.columns
     assert "hour_of_day" in out.columns
->>>>>>> b58c80e (fix for csv read preprocessing piece)
