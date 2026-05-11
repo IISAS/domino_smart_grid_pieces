@@ -62,6 +62,19 @@
                     "description": "One of: `batch_sample`, `realtime_stream`.",
                     "title": "Output Mode"
                 },
+                "output_format": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "One of: `json`, `csv`.",
+                    "title": "Output Format"
+                },
                 "records_count": {
                     "default": 20,
                     "description": "Number of records to generate.",
