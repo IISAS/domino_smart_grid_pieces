@@ -191,6 +191,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
                     "output_mode must be `batch_sample` or `realtime_stream`."
                 )
             output_format = str(payload.get("output_format", "json")).strip().lower()
+            self.logger.info("Output format: %s", output_format)
             if output_format not in {"json", "csv"}:
                 raise ValueError("output_format must be `json` or `csv`.")
 
