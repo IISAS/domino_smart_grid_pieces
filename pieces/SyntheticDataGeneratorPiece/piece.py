@@ -180,6 +180,12 @@ class SyntheticDataGeneratorPiece(BasePiece):
             if output_format not in {"json", "csv"}:
                 raise ValueError("output_format must be `json` or `csv`.")
 
+            self.logger.info(
+                "Setup of configuration completed with output_mode=%s and output_format=%s",
+                output_mode,
+                output_format,
+            )
+
             records_count = int(payload.get("records_count", 20))
             if records_count <= 0:
                 raise ValueError("records_count must be > 0")
