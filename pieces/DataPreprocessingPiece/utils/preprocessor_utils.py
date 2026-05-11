@@ -24,11 +24,7 @@ def preprocess_solargis_data(data):
     import pandas as pd  # type: ignore
 
     data = data.copy()
-    # Be robust whether `datetime` is already datetime-like or still string-like.
-    try:
-        data["datetime"] = pd.to_datetime(data["datetime"], format="%d.%m.%Y %H:%M")
-    except (ValueError, TypeError):
-        data["datetime"] = pd.to_datetime(data["datetime"])
+    data = ensure_datetime_column(data)
 
     # Filter out night hours
     original_rows = len(data)
@@ -41,3 +37,34 @@ def preprocess_solargis_data(data):
 
     print(f"[INFO] Processed {len(data)} rows out of {original_rows} original rows")
     return data
+
+
+def ensure_datetime_column(data):
+    """
+    Ensure dataframe contains a parsed `datetime` column.
+
+    Supported schemas:
+    - existing `datetime` column
+    - separate `Date` + `Time` columns
+    """
+    import pandas as pd  # type: ignore
+
+    if "datetime" in data.columns:
+        try:
+            data["datetime"] = pd.to_datetime(data["datetime"], format="%d.%m.%Y %H:%M")
+        except (ValueError, TypeError):
+            data["datetime"] = pd.to_datetime(data["datetime"])
+        return data
+
+    if "Date" in data.columns and "Time" in data.columns:
+        data["datetime"] = pd.to_datetime(
+            data["Date"].astype(str) + " " + data["Time"].astype(str),
+            format="%d.%m.%Y %H:%M",
+            dayfirst=True,
+        )
+        return data
+
+    raise ValueError(
+        "Input data must contain either a `datetime` column or both `Date` and `Time` columns. "
+        f"Found columns: {list(data.columns)}"
+    )
