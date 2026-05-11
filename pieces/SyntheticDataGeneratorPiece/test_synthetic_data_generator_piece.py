@@ -121,3 +121,29 @@ def test_synthetic_data_generator_piece_solargis_csv_output():
             "PVOUT_UNC_LOW",
             "PVOUT_UNC_HIGH",
         ]
+
+
+def test_synthetic_data_generator_piece_csv_with_title_cased_json_key():
+    """Domino / JSON-schema UIs may send `Output format` instead of `output_format`."""
+    output_data = piece_dry_run(
+        "SyntheticDataGeneratorPiece",
+        {
+            "dataset_type": "solargis",
+            "output_mode": "batch_sample",
+            "Output format": "csv",
+            "records_count": 2,
+            "time_step_minutes": 15,
+            "seed": 99,
+        },
+    )
+    file_path = output_data["file_path"]
+    assert file_path is not None
+    assert file_path.endswith(".csv")
+
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        return
+
+    with open(file_path, encoding="utf-8", newline="") as f:
+        reader = csv.DictReader(f, delimiter=";")
+        rows = list(reader)
+        assert len(rows) == 2

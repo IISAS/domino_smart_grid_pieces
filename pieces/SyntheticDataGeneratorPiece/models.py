@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 from typing import Optional
 
 DATASET_TYPE_ALIASES: dict[str, str] = {
@@ -43,6 +43,14 @@ class InputModel(BaseModel):
         default=None,
         title="Output Format",
         description="One of: `json`, `csv`.",
+        validation_alias=AliasChoices(
+            "output_format",
+            "outputFormat",
+            "Output format",
+            "Output Format",
+            "export_format",
+            "file_format",
+        ),
     )
     records_count: int = Field(
         default=20,
@@ -81,6 +89,19 @@ class InputModel(BaseModel):
                 if key != "payload":
                     merged[key] = value
             data = merged
+
+        # Domino / JSON-schema UIs may send the title-cased property key instead of snake_case.
+        if not data.get("output_format"):
+            for alias in (
+                "outputFormat",
+                "Output format",
+                "Output Format",
+                "export_format",
+                "file_format",
+            ):
+                if alias in data and data.get(alias) is not None:
+                    data["output_format"] = data.pop(alias)
+                    break
 
         dataset_type = data.get("dataset_type")
         if dataset_type is not None:

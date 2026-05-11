@@ -150,6 +150,20 @@ class SyntheticDataGeneratorPiece(BasePiece):
 
     def piece_function(self, input_data: InputModel):
         payload = input_data.to_payload_dict()
+        extra = getattr(input_data, "model_extra", None) or {}
+        if not payload.get("output_format"):
+            for key in (
+                "output_format",
+                "outputFormat",
+                "Output format",
+                "Output Format",
+                "export_format",
+                "file_format",
+            ):
+                val = extra.get(key)
+                if val is not None and str(val).strip() != "":
+                    payload["output_format"] = val
+                    break
         self.logger.info("Running SyntheticDataGeneratorPiece.")
 
         try:
