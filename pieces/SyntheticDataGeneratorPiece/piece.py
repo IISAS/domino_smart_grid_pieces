@@ -237,7 +237,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
             self.logger.info("Dataset saved to file at %s", file_path)
 
             # Display records in a Domino GUI
-            self.display_result = {"file_type": "text", "file_path": file_path}
+            self.display_result = {"file_type": "txt", "file_path": file_path}
 
             return OutputModel(
                 file_path=file_path,
