@@ -23,6 +23,19 @@ jobs:
           persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal access token.
           fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
 
+      - name: Compute image tag prefix
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="${{ github.ref_name }}"
+          if [[ "$BRANCH" == "dev3" ]]; then
+            TAG_PREFIX="development-3"
+          else
+            TAG_PREFIX="development"
+          fi
+          echo "TAG_PREFIX=$TAG_PREFIX" >> "$GITHUB_ENV"
+          echo "Using image tag prefix: $TAG_PREFIX"
+
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
         with:
@@ -72,7 +85,7 @@ jobs:
       - name: Run organize and build images
         working-directory: ${{ env.CI_WORKDIR }}
         run: |
-          domino piece organize --build-images --source-url=https://github.com/${{github.repository}} --tag-overwrite=development
+          domino piece organize --build-images --source-url=https://github.com/${{github.repository}} --tag-overwrite=${TAG_PREFIX}
 
       - name: Install Tests Dependencies
         working-directory: ${{ env.CI_WORKDIR }}
@@ -134,9 +147,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Immutable, incrementing dev release (keeps history)
-          DEV_TAG="development-${{ github.run_number }}"
+          DEV_TAG="${TAG_PREFIX}-${{ github.run_number }}"
           domino piece release --tag-name="$DEV_TAG" --commit-sha="$commit_sha"
 
-          # Moving "latest dev" tag for consumers that always pull `development`
-          domino piece delete-release --tag-name=development || true
-          domino piece release --tag-name=development --commit-sha="$commit_sha"
+          # Moving "latest dev" tag for consumers that always pull `${TAG_PREFIX}`
+          domino piece delete-release --tag-name=${TAG_PREFIX} || true
+          domino piece release --tag-name=${TAG_PREFIX} --commit-sha="$commit_sha"
