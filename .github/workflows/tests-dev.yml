@@ -3,7 +3,7 @@ name: Run tests on dev branch
 on:
   push:
     branches:
-      - dev
+      - dev3
     paths:
       - "config.toml"
       - "pieces/**"
