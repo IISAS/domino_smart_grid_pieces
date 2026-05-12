@@ -11,6 +11,7 @@ on:
       - "requirements-tests.txt"
       - "run_all_tests.sh"
       - ".ci/skip-pieces.txt"
+      - ".github/workflows/tests-dev.yml"
   workflow_dispatch:
 
 jobs:
