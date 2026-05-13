@@ -4,11 +4,11 @@
 # Example:
 # DataPreprocessingPiece
 
-DataNormalizationPiece
+# DataNormalizationPiece
 ElectricityPricePredictionModelTrainPiece
-EvaluateMLModelPiece
+# EvaluateMLModelPiece
 ExplainablePredictionPiece
-InferencePiece
-ModelDeciderPiece
+# InferencePiece
+# ModelDeciderPiece
 PVOUTErrorCorrectionModelTrainPiece
-PVOUTPredictionModelTrainPiece
+# PVOUTPredictionModelTrainPiece
