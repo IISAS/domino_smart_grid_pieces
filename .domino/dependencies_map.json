@@ -5,12 +5,26 @@
             "requirements_file": "requirements_0.txt"
         },
         "pieces": [
-            "SyntheticDataGeneratorPiece"
+            "EvaluateMLModelPiece",
+            "DataNormalizationPiece",
+            "SyntheticDataGeneratorPiece",
+            "ModelDeciderPiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group0"
     },
     "group1": {
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_1.txt"
+        },
+        "pieces": [
+            "InferencePiece"
+        ],
+        "secrets": [],
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1"
+    },
+    "group2": {
         "dependency": {
             "dockerfile": null,
             "requirements_file": "requirements_4.txt"
@@ -19,6 +33,17 @@
             "DataPreprocessingPiece"
         ],
         "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1"
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group2"
+    },
+    "group3": {
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_2.txt"
+        },
+        "pieces": [
+            "PVOUTPredictionModelTrainPiece"
+        ],
+        "secrets": [],
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group3"
     }
 }
