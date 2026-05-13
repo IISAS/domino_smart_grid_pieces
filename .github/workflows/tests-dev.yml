@@ -30,7 +30,7 @@ jobs:
           set -euo pipefail
           BRANCH="${{ github.ref_name }}"
           if [[ "$BRANCH" == "dev3" ]]; then
-            TAG_PREFIX="development-3"
+            TAG_PREFIX="dev-3"
           else
             TAG_PREFIX="development"
           fi
