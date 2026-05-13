@@ -37,6 +37,18 @@ class InputModel(BaseModel):
 
 class OutputModel(BaseModel):
     message: str = Field(description="Human-readable status message.")
+    data_path: str | None = Field(
+        default=None,
+        description="Path to preprocessed CSV (consumable upstream → normalization / trainer / inference).",
+    )
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        description="Resolved feature columns (consumable upstream → trainer / inference).",
+    )
+    target_column: str = Field(
+        default="PVOUT",
+        description="Target column used (consumable upstream → trainer).",
+    )
     artifacts: dict = Field(
         default_factory=dict,
         description="Optional outputs (e.g., cleaned dataset URI, dropped rows stats).",

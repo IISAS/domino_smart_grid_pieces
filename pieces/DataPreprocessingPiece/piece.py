@@ -39,12 +39,19 @@ class DataPreprocessingPiece(BasePiece):
             if saved_path:
                 artifacts["data_path"] = saved_path
                 self.display_result = {"file_type": "txt", "file_path": saved_path}
-            return OutputModel(message=result["message"], artifacts=artifacts)
+            return OutputModel(
+                message=result["message"],
+                data_path=saved_path,
+                feature_columns=list(artifacts.get("features") or []),
+                target_column="PVOUT",
+                artifacts=artifacts,
+            )
 
         if preprocessing_option == "correction":
             result = preprocess_correction(payload)
             artifacts = dict(result["artifacts"])
             saved_path = payload.get("save_data_path")
+            pred_path = None
             if saved_path:
                 root, ext = Path(saved_path).stem, Path(saved_path).suffix
                 pred_path = str(Path(saved_path).with_name(f"{root}_pred{ext}"))
@@ -52,7 +59,13 @@ class DataPreprocessingPiece(BasePiece):
                 artifacts["data_path_pred"] = pred_path
                 artifacts["data_path_true"] = true_path
                 self.display_result = {"file_type": "txt", "file_path": pred_path}
-            return OutputModel(message=result["message"], artifacts=artifacts)
+            return OutputModel(
+                message=result["message"],
+                data_path=pred_path,
+                feature_columns=[],
+                target_column="PVOUT",
+                artifacts=artifacts,
+            )
 
         raise ValueError(
             f"Invalid preprocessing option: {preprocessing_option}. "

@@ -10,8 +10,16 @@ class InputModel(BaseModel):
     )
     baseline_id: int = Field(default=1, description="Baseline horizon id.")
     plot: bool = Field(default=False, description="Whether to generate plots/heatmaps.")
+    pred_df_path: str | None = Field(
+        default=None,
+        description="Path to predictions CSV (e.g. inference.forecast_csv_path).",
+    )
+    true_baseline_df_path: str | None = Field(
+        default=None,
+        description="Path to true-baseline CSV for errorcorrection mode.",
+    )
     pred_df: str | None = Field(
-        default=None, description="Predictions payload as JSON object."
+        default=None, description="Inline predictions payload as JSON object."
     )
     true_baseline_df: str | None = Field(
         default=None, description="Optional baseline payload as JSON object."

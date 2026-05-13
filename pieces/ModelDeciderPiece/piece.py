@@ -48,6 +48,11 @@ class ModelDeciderPiece(BasePiece):
 
         return OutputModel(
             message=f"ModelDeciderPiece selected model_type={model_type}, normalization_type={normalization_type}.",
+            model_type=model_type,
+            normalization_type=normalization_type,
+            feature_columns=list(decision.get("feature_columns") or []),
+            target_column=str(decision.get("target_column") or "PVOUT"),
+            decision_path=decision_path,
             artifacts=artifacts,
         )
 

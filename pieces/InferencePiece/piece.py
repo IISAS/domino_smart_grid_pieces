@@ -38,5 +38,6 @@ class InferencePiece(BasePiece):
 
         return OutputModel(
             message="InferencePiece executed.",
+            forecast_csv_path=csv_path,
             artifacts=artifacts,
         )

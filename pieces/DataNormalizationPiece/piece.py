@@ -139,6 +139,9 @@ class DataNormalizationPiece(BasePiece):
                 self.display_result = {"file_type": "txt", "file_path": saved_path}
             return OutputModel(
                 message="DataNormalizationPiece executed (passthrough).",
+                data_path=saved_path,
+                normalization_type="none",
+                features=applied_features,
                 artifacts=artifacts,
             )
 
@@ -165,6 +168,9 @@ class DataNormalizationPiece(BasePiece):
 
         return OutputModel(
             message="DataNormalizationPiece executed.",
+            data_path=saved_path,
+            normalization_type=str(normalization_type),
+            features=list(applied_features),
             artifacts=artifacts,
         )
 

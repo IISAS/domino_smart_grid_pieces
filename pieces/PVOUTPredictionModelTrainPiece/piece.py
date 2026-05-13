@@ -81,16 +81,20 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
         model = create_model(model_type=model_type, model_params=model_params)
         model.train(X, y)
 
+        artifacts = self._build_artifacts(
+            model=model,
+            model_type=model_type,
+            feature_columns=feature_columns,
+            target_column=target_column,
+            model_params=model_params,
+            payload=payload,
+        )
         return OutputModel(
             message="PVOUTPredictionModelTrainPiece executed.",
-            artifacts=self._build_artifacts(
-                model=model,
-                model_type=model_type,
-                feature_columns=feature_columns,
-                target_column=target_column,
-                model_params=model_params,
-                payload=payload,
-            ),
+            model_path=artifacts.get("checkpoint_path"),
+            feature_columns=list(feature_columns),
+            target_column=str(target_column),
+            artifacts=artifacts,
         )
 
     def _build_artifacts(
