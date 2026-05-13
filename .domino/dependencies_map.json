@@ -8,7 +8,7 @@
             "SyntheticDataGeneratorPiece"
         ],
         "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:development-3-group0"
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group0"
     },
     "group1": {
         "dependency": {
@@ -19,6 +19,6 @@
             "DataPreprocessingPiece"
         ],
         "secrets": [],
-        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:development-3-group1"
+        "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1"
     }
 }
