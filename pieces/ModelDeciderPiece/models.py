@@ -5,18 +5,44 @@ class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     problem_type: str | None = Field(
-        default=None, description="Problem type for model selection."
+        default=None,
+        title="Problem Type",
+        description=(
+            "Forecasting problem this DAG addresses. "
+            "One of: `pvout_prediction`, `pvout_error_correction`, `price_prediction`. "
+            "Currently informational only — the decider does not branch on this value yet."
+        ),
     )
-    horizon: int | None = Field(default=None, description="Prediction horizon.")
+    horizon: int | None = Field(
+        default=1,
+        title="Horizon",
+        description=(
+            "Prediction horizon in steps. "
+            "Examples: `1` for single-step forecasting, `96` for 24 hours at 15-minute resolution."
+        ),
+    )
     available_models: list[str] = Field(
-        default_factory=list, description="Available model identifiers."
+        default_factory=list,
+        title="Available Models",
+        description=(
+            "Candidate model identifiers. Click `+` to add one or more of: "
+            "`xgb_regressor_model`, `linear_regression_model`, `interval_xgb_regressor_model`, "
+            "`eda_rule_baseline`, `tabpfn_regressor_model`. "
+            "The decider picks `xgb_regressor_model` when available."
+        ),
     )
     feature_columns: list[str] = Field(
         default_factory=list,
-        description="Echoed feature columns (so downstream trainer/inference can wire it).",
+        title="Feature Columns",
+        description=(
+            "Optional explicit feature list. Usually left empty — downstream trainer/inference "
+            "should wire its own `Feature Columns` directly from the preprocessor."
+        ),
     )
     target_column: str | None = Field(
-        default=None, description="Echoed target column name (default `PVOUT`)."
+        default="PVOUT",
+        title="Target Column",
+        description="Target column name to forecast. Default `PVOUT` for solargis-style datasets.",
     )
 
     @model_validator(mode="before")

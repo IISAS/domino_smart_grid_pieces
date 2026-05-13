@@ -5,20 +5,37 @@ class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     normalization_type: str | None = Field(
-        default=None,
-        description="Normalization type: `logaritmic`, `exponential`, `min_max`, `z_score`, or `none` to passthrough.",
+        default="none",
+        title="Normalization Type",
+        description=(
+            "One of: `none`, `min_max`, `z_score`, `logaritmic`, `exponential`. "
+            "Use `none` (passthrough) for tree-based models like XGBoost. "
+            "Usually wired upstream from `ModelDeciderPiece.Normalization Type`."
+        ),
     )
     features: list[str] = Field(
         default_factory=list,
-        description="Optional list of feature/column names to normalize. Empty = all columns.",
+        title="Features",
+        description=(
+            "Optional list of column names to normalize. Empty = apply to all numeric columns. "
+            "Click `+` and add column names like `GHI`, `TEMP`, `WS`."
+        ),
     )
     data_path: str | None = Field(
         default=None,
-        description="Path to input CSV (e.g. from DataPreprocessingPiece.data_path).",
+        title="Data Path",
+        description=(
+            "Path to input CSV. Wire upstream from `DataPreprocessingPiece.Data Path` "
+            "(the preprocessor's `preprocessed.csv`)."
+        ),
     )
     dataframe: str | None = Field(
         default=None,
-        description="Optional inline dataframe payload (used when no `data_path` is provided).",
+        title="Dataframe",
+        description=(
+            "Optional inline dataframe payload (JSON object). "
+            "Leave empty when `Data Path` is provided."
+        ),
     )
 
     @model_validator(mode="before")
