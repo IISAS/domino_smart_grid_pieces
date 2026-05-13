@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from domino.base_piece import BasePiece
 
 from .models import InputModel, OutputModel
@@ -83,11 +86,18 @@ class EvaluateMLModelPiece(BasePiece):
                 "evaluation_option must be one of: normal, errorcorrection."
             )
 
+        metrics_path = str(Path(self.results_path) / "metrics.json")
+        Path(metrics_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(metrics_path, "w", encoding="utf-8") as f:
+            json.dump({"evaluation_option": evaluation_option, "metrics": metrics}, f, indent=2, default=str)
+        self.display_result = {"file_type": "txt", "file_path": metrics_path}
+
         return OutputModel(
             message="EvaluateMLModelPiece executed.",
             artifacts={
                 "input_payload": payload,
                 "evaluation_option": evaluation_option,
                 "metrics": metrics,
+                "metrics_path": metrics_path,
             },
         )

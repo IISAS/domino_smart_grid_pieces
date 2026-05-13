@@ -23,8 +23,8 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
         model_type = str(payload.get("model_type", "linear_regression_model")).lower()
         model_params = payload.get("model_params") or {}
         setup = payload.get("model_setup") or {}
-        feature_columns = setup.get("feature_columns")
-        target_column = setup.get("target_column", "PVOUT")
+        feature_columns = setup.get("feature_columns") or payload.get("feature_columns")
+        target_column = setup.get("target_column") or payload.get("target_column", "PVOUT")
 
         if model_type not in MODEL_TYPES:
             raise ValueError(
