@@ -1,4 +1,150 @@
 {
+    "EvaluateMLModelPiece": {
+        "name": "EvaluateMLModelPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Evaluation"
+        ],
+        "style": {
+            "node_label": "Evaluate ML Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:clipboard-check",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 1024
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "evaluation_option": {
+                    "default": "normal",
+                    "description": "Evaluation mode: `normal` or `errorcorrection`.",
+                    "title": "Evaluation Option",
+                    "type": "string"
+                },
+                "baseline_id": {
+                    "default": 1,
+                    "description": "Baseline horizon id.",
+                    "title": "Baseline Id",
+                    "type": "integer"
+                },
+                "plot": {
+                    "default": false,
+                    "description": "Whether to generate plots/heatmaps.",
+                    "title": "Plot",
+                    "type": "boolean"
+                },
+                "pred_df_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to predictions CSV (e.g. inference.forecast_csv_path).",
+                    "title": "Pred Df Path"
+                },
+                "true_baseline_df_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to true-baseline CSV for errorcorrection mode.",
+                    "title": "True Baseline Df Path"
+                },
+                "pred_df": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Inline predictions payload as JSON object.",
+                    "title": "Pred Df"
+                },
+                "true_baseline_df": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional baseline payload as JSON object.",
+                    "title": "True Baseline Df"
+                },
+                "y_true": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional true values as JSON array.",
+                    "title": "Y True"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., metrics JSON, plots, report URI).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
+    },
     "DataNormalizationPiece": {
         "name": "DataNormalizationPiece",
         "dependency": {
@@ -135,6 +281,332 @@
         },
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataNormalizationPiece"
+    },
+    "SyntheticDataGeneratorPiece": {
+        "name": "SyntheticDataGeneratorPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "SyntheticData",
+            "Generator",
+            "Simulation"
+        ],
+        "style": {
+            "node_label": "Synthetic Data Generator",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:database",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Generate synthetic tabular datasets for multiple smart-grid data domains in batch or realtime-like mode.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "dataset_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "One of: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` (aliases like `SoalrGIS Dataset` and `shmi` are also accepted).",
+                    "title": "Dataset Type"
+                },
+                "output_mode": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "One of: `batch_sample`, `realtime_stream`.",
+                    "title": "Output Mode"
+                },
+                "output_format": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "One of: `json`, `csv`.",
+                    "title": "Output Format"
+                },
+                "records_count": {
+                    "default": 20,
+                    "description": "Number of records to generate.",
+                    "title": "Records Count",
+                    "type": "integer"
+                },
+                "time_step_minutes": {
+                    "default": 15,
+                    "description": "Time step between generated records in minutes.",
+                    "title": "Time Step Minutes",
+                    "type": "integer"
+                },
+                "interval_ms": {
+                    "default": 1000,
+                    "description": "Realtime interval hint in milliseconds.",
+                    "title": "Interval Ms",
+                    "type": "integer"
+                },
+                "start_at": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional start datetime in ISO format.",
+                    "title": "Start At"
+                },
+                "seed": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional random seed for reproducible synthetic data.",
+                    "title": "Seed"
+                },
+                "timezone_offset_hours": {
+                    "default": 1.0,
+                    "description": "Timezone offset used by SolarGIS-like records.",
+                    "title": "Timezone Offset Hours",
+                    "type": "number"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "file_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Dataset file path"
+                }
+            },
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/SyntheticDataGeneratorPiece"
+    },
+    "InferencePiece": {
+        "name": "InferencePiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_1.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Inference"
+        ],
+        "style": {
+            "node_label": "Inference",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:bolt",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Runs inference on prepared features: pvout_correction or price_ahead (base + model correction).",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "mode": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Inference mode: `pvout_correction`, `price_ahead`, `price_level`.",
+                    "title": "Mode"
+                },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Model artifact path.",
+                    "title": "Model Path"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to input CSV (e.g. from preprocessor/normalization).",
+                    "title": "Data Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns the model expects (from preprocessor/decider/trainer).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "datetime_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Datetime column name.",
+                    "title": "Datetime Column"
+                },
+                "base_forecast_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Baseline forecast column name.",
+                    "title": "Base Forecast Column"
+                },
+                "horizon_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Horizon/id column name.",
+                    "title": "Horizon Column"
+                },
+                "max_horizon": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional maximum horizon.",
+                    "title": "Max Horizon"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "forecast_csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to forecast CSV (consumable upstream \u2192 evaluator.pred_df_path).",
+                    "title": "Forecast Csv Path"
+                },
+                "artifacts": {
+                    "description": "No-op: `input_payload`. Run: `forecast` (inline_records, csv_path, columns), `per_horizon`, `metadata`, optional `debug`. Pipeline: additionally `stage_summaries`.",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
     },
     "DataPreprocessingPiece": {
         "name": "DataPreprocessingPiece",
@@ -611,477 +1083,5 @@
         },
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ModelDeciderPiece"
-    },
-    "EvaluateMLModelPiece": {
-        "name": "EvaluateMLModelPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "Template",
-            "Model",
-            "Evaluation"
-        ],
-        "style": {
-            "node_label": "Evaluate ML Model",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:clipboard-check",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 1024
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "evaluation_option": {
-                    "default": "normal",
-                    "description": "Evaluation mode: `normal` or `errorcorrection`.",
-                    "title": "Evaluation Option",
-                    "type": "string"
-                },
-                "baseline_id": {
-                    "default": 1,
-                    "description": "Baseline horizon id.",
-                    "title": "Baseline Id",
-                    "type": "integer"
-                },
-                "plot": {
-                    "default": false,
-                    "description": "Whether to generate plots/heatmaps.",
-                    "title": "Plot",
-                    "type": "boolean"
-                },
-                "pred_df_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to predictions CSV (e.g. inference.forecast_csv_path).",
-                    "title": "Pred Df Path"
-                },
-                "true_baseline_df_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to true-baseline CSV for errorcorrection mode.",
-                    "title": "True Baseline Df Path"
-                },
-                "pred_df": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Inline predictions payload as JSON object.",
-                    "title": "Pred Df"
-                },
-                "true_baseline_df": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional baseline payload as JSON object.",
-                    "title": "True Baseline Df"
-                },
-                "y_true": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional true values as JSON array.",
-                    "title": "Y True"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., metrics JSON, plots, report URI).",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
-    },
-    "InferencePiece": {
-        "name": "InferencePiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_1.txt"
-        },
-        "tags": [
-            "Template",
-            "Model",
-            "Inference"
-        ],
-        "style": {
-            "node_label": "Inference",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:bolt",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Runs inference on prepared features: pvout_correction or price_ahead (base + model correction).",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 512
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "mode": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Inference mode: `pvout_correction`, `price_ahead`, `price_level`.",
-                    "title": "Mode"
-                },
-                "model_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Model artifact path.",
-                    "title": "Model Path"
-                },
-                "data_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to input CSV (e.g. from preprocessor/normalization).",
-                    "title": "Data Path"
-                },
-                "feature_columns": {
-                    "description": "Feature columns the model expects (from preprocessor/decider/trainer).",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Feature Columns",
-                    "type": "array"
-                },
-                "datetime_column": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Datetime column name.",
-                    "title": "Datetime Column"
-                },
-                "base_forecast_column": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Baseline forecast column name.",
-                    "title": "Base Forecast Column"
-                },
-                "horizon_column": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Horizon/id column name.",
-                    "title": "Horizon Column"
-                },
-                "max_horizon": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional maximum horizon.",
-                    "title": "Max Horizon"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "forecast_csv_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to forecast CSV (consumable upstream \u2192 evaluator.pred_df_path).",
-                    "title": "Forecast Csv Path"
-                },
-                "artifacts": {
-                    "description": "No-op: `input_payload`. Run: `forecast` (inline_records, csv_path, columns), `per_horizon`, `metadata`, optional `debug`. Pipeline: additionally `stage_summaries`.",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
-    },
-    "SyntheticDataGeneratorPiece": {
-        "name": "SyntheticDataGeneratorPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "SyntheticData",
-            "Generator",
-            "Simulation"
-        ],
-        "style": {
-            "node_label": "Synthetic Data Generator",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:database",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Generate synthetic tabular datasets for multiple smart-grid data domains in batch or realtime-like mode.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 512
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "dataset_type": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "One of: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` (aliases like `SoalrGIS Dataset` and `shmi` are also accepted).",
-                    "title": "Dataset Type"
-                },
-                "output_mode": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "One of: `batch_sample`, `realtime_stream`.",
-                    "title": "Output Mode"
-                },
-                "output_format": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "One of: `json`, `csv`.",
-                    "title": "Output Format"
-                },
-                "records_count": {
-                    "default": 20,
-                    "description": "Number of records to generate.",
-                    "title": "Records Count",
-                    "type": "integer"
-                },
-                "time_step_minutes": {
-                    "default": 15,
-                    "description": "Time step between generated records in minutes.",
-                    "title": "Time Step Minutes",
-                    "type": "integer"
-                },
-                "interval_ms": {
-                    "default": 1000,
-                    "description": "Realtime interval hint in milliseconds.",
-                    "title": "Interval Ms",
-                    "type": "integer"
-                },
-                "start_at": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional start datetime in ISO format.",
-                    "title": "Start At"
-                },
-                "seed": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional random seed for reproducible synthetic data.",
-                    "title": "Seed"
-                },
-                "timezone_offset_hours": {
-                    "default": 1.0,
-                    "description": "Timezone offset used by SolarGIS-like records.",
-                    "title": "Timezone Offset Hours",
-                    "type": "number"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "file_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Dataset file path"
-                }
-            },
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/SyntheticDataGeneratorPiece"
     }
 }
