@@ -102,6 +102,7 @@ def run_inference(payload: dict) -> dict[str, Any]:
         pred_df,
         datetime_column=datetime_column,
         horizon_column=horizon_column,
+        target_column=base_forecast_column,
     )
 
     csv_path = serialize_forecast_if_requested(
@@ -254,6 +255,7 @@ def run_staged_inference(payload: dict) -> dict[str, Any]:
             pred_df,
             datetime_column=datetime_column,
             horizon_column=horizon_column,
+            target_column=base_forecast_column,
         )
         last_missing = missing_columns
         last_added = added_columns
