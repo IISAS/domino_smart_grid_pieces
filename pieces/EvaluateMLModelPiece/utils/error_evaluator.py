@@ -11,6 +11,8 @@ class ErrorEvaluator:
         y_true=None,
         baseline_id: int = 1,
         plot: bool = False,
+        forecast_column: str = "final_forecast",
+        target_column: str = "PVOUT",
     ):
         """
         Evaluate prediction error vs true baseline.
@@ -49,6 +51,10 @@ class ErrorEvaluator:
         elif has_baseline_in_df:
             diff_df = self._calculate_differences_vs_baseline(
                 df, baseline_id=baseline_id, baseline_embedded=True
+            )
+        elif forecast_column in df.columns and target_column in df.columns:
+            return self._direct_forecast_metrics(
+                df, forecast_column=forecast_column, target_column=target_column
             )
         else:
             # No baseline information available.
@@ -170,6 +176,40 @@ class ErrorEvaluator:
         if "pred_sequence_id" not in pred_df.columns:
             pred_df["pred_sequence_id"] = baseline_id + 1
         return pred_df
+
+    def _direct_forecast_metrics(self, df, forecast_column: str, target_column: str):
+        """
+        Compute MAE / RMSE / MAPE directly from a forecast column vs. truth column.
+
+        Used when the pred_df contains both columns (typical Inference output) and no
+        baseline/horizon information is available to drive the more elaborate analysis.
+        """
+        import numpy as np
+        import pandas as pd
+
+        y_pred = pd.to_numeric(df[forecast_column], errors="coerce")
+        y_true = pd.to_numeric(df[target_column], errors="coerce")
+        err = y_pred - y_true
+        mask = err.notna() & y_true.notna()
+        err, y_t = err[mask], y_true[mask]
+        if len(err) == 0:
+            return {}
+        y_t_safe = y_t.replace(0, np.nan)
+        mape = (
+            float((err.abs() / y_t_safe).mean() * 100)
+            if y_t_safe.notna().any()
+            else float("nan")
+        )
+        metrics = {
+            "mae": float(err.abs().mean()),
+            "rmse": float(np.sqrt((err**2).mean())),
+            "mape": mape,
+            "forecast_column": forecast_column,
+            "target_column": target_column,
+            "n": int(len(err)),
+        }
+        self._print_test_metrics(metrics)
+        return metrics
 
     def _evaluate_test_split(self, pred_df, y_true):
         import numpy as np

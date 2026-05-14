@@ -40,6 +40,8 @@ class EvaluateMLModelPiece(BasePiece):
 
         plot = bool(payload.get("plot", False))
         baseline_id = int(payload.get("baseline_id", 1))
+        forecast_column = str(payload.get("forecast_column") or "final_forecast")
+        target_column = str(payload.get("target_column") or "PVOUT")
 
         # Lazy import: heavy deps only loaded when evaluation is requested.
         from .utils.error_evaluator import ErrorEvaluator
@@ -59,6 +61,8 @@ class EvaluateMLModelPiece(BasePiece):
                 y_true=None,
                 baseline_id=baseline_id,
                 plot=plot,
+                forecast_column=forecast_column,
+                target_column=target_column,
             )
         elif evaluation_option in {"errorcorrection", "error_correction", "correction"}:
             y_true = payload.get("y_true")

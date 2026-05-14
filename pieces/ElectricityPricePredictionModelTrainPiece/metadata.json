@@ -2,7 +2,7 @@
   "name": "ElectricityPricePredictionModelTrainPiece",
   "description": "Template piece for training an electricity price prediction model.",
   "dependency": {
-    "requirements_file": "requirements_3.txt"
+    "requirements_file": "requirements_1.txt"
   },
   "container_resources": {
     "requests": {
