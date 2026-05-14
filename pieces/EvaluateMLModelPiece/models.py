@@ -10,8 +10,30 @@ class InputModel(BaseModel):
     )
     baseline_id: int = Field(default=1, description="Baseline horizon id.")
     plot: bool = Field(default=False, description="Whether to generate plots/heatmaps.")
+    forecast_column: str = Field(
+        default="final_forecast",
+        title="Forecast Column",
+        description=(
+            "Name of the predicted-value column in pred_df. "
+            "Defaults to `final_forecast` (from InferencePiece). "
+            "Switch to `correction` when evaluating the raw model output in pvout_correction mode."
+        ),
+    )
+    target_column: str = Field(
+        default="PVOUT",
+        title="Target Column",
+        description="Name of the ground-truth column in pred_df. Default `PVOUT`.",
+    )
+    pred_df_path: str | None = Field(
+        default=None,
+        description="Path to predictions CSV (e.g. inference.forecast_csv_path).",
+    )
+    true_baseline_df_path: str | None = Field(
+        default=None,
+        description="Path to true-baseline CSV for errorcorrection mode.",
+    )
     pred_df: str | None = Field(
-        default=None, description="Predictions payload as JSON object."
+        default=None, description="Inline predictions payload as JSON object."
     )
     true_baseline_df: str | None = Field(
         default=None, description="Optional baseline payload as JSON object."

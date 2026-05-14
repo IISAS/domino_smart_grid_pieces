@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from domino.base_piece import BasePiece
 
 from .models import InputModel, OutputModel
@@ -29,8 +32,22 @@ class EvaluateMLModelPiece(BasePiece):
             or payload.get("df")
         )
 
+        # Allow CSV-path inputs (e.g. wired from InferencePiece.forecast_csv_path).
+        if pred_df is None and payload.get("pred_df_path"):
+            import pandas as pd  # type: ignore
+
+            pred_df = pd.read_csv(payload["pred_df_path"])
+
+        # If pred_df arrived as a list of records (inline JSON), promote it to a DataFrame.
+        if isinstance(pred_df, list):
+            import pandas as pd  # type: ignore
+
+            pred_df = pd.DataFrame(pred_df)
+
         plot = bool(payload.get("plot", False))
         baseline_id = int(payload.get("baseline_id", 1))
+        forecast_column = str(payload.get("forecast_column") or "final_forecast")
+        target_column = str(payload.get("target_column") or "PVOUT")
 
         # Lazy import: heavy deps only loaded when evaluation is requested.
         from .utils.error_evaluator import ErrorEvaluator
@@ -50,12 +67,22 @@ class EvaluateMLModelPiece(BasePiece):
                 y_true=None,
                 baseline_id=baseline_id,
                 plot=plot,
+                forecast_column=forecast_column,
+                target_column=target_column,
             )
         elif evaluation_option in {"errorcorrection", "error_correction", "correction"}:
             y_true = payload.get("y_true")
             true_baseline_df = payload.get("true_baseline_df") or payload.get(
                 "baseline_df"
             )
+            if true_baseline_df is None and payload.get("true_baseline_df_path"):
+                import pandas as pd  # type: ignore
+
+                true_baseline_df = pd.read_csv(payload["true_baseline_df_path"])
+            if isinstance(true_baseline_df, list):
+                import pandas as pd  # type: ignore
+
+                true_baseline_df = pd.DataFrame(true_baseline_df)
 
             if y_true is not None:
                 metrics = evaluator.evaluate(
@@ -83,11 +110,18 @@ class EvaluateMLModelPiece(BasePiece):
                 "evaluation_option must be one of: normal, errorcorrection."
             )
 
+        metrics_path = str(Path(self.results_path) / "metrics.json")
+        Path(metrics_path).parent.mkdir(parents=True, exist_ok=True)
+        with open(metrics_path, "w", encoding="utf-8") as f:
+            json.dump({"evaluation_option": evaluation_option, "metrics": metrics}, f, indent=2, default=str)
+        self.display_result = {"file_type": "txt", "file_path": metrics_path}
+
         return OutputModel(
             message="EvaluateMLModelPiece executed.",
             artifacts={
                 "input_payload": payload,
                 "evaluation_option": evaluation_option,
                 "metrics": metrics,
+                "metrics_path": metrics_path,
             },
         )

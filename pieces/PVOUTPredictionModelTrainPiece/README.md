@@ -10,8 +10,8 @@ A Domino piece for training PV output prediction models from tabular data. The p
 |-----------|------|---------|-------------|
 | `payload.model_type` | `str` | `linear_regression_model` | Model selector: `linear_regression_model`, `xgb_regressor_model`, `interval_xgb_regressor_model`, `eda_rule_baseline`, `tabpfn_regressor_model` |
 | `payload.model_params` | `dict` | `{}` | Constructor parameters forwarded to selected model |
-| `payload.model_setup.feature_columns` | `list[str]` | *(required)* | Feature column names used for training |
-| `payload.model_setup.target_column` | `str` | `PVOUT` | Target column used as y |
+| `payload.model_setup.feature_columns` / `payload.feature_columns` | `list[str]` | *(required)* | Feature column names used for training. Nested or top-level both accepted |
+| `payload.model_setup.target_column` / `payload.target_column` | `str` | `PVOUT` | Target column used as y. Nested or top-level both accepted |
 | `payload.data_path` / `payload.csv_path` | `str` | `None` | Path to CSV training data |
 | `payload.tabular_data` / `payload.dataframe` | `list[dict] \| dict[str, list]` | `None` | Inline tabular input alternative |
 | `payload.checkpoint_dir` | `str` | piece results path / temp dir | Folder where checkpoint is written |

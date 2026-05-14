@@ -9,6 +9,14 @@ class InputModel(BaseModel):
         description="Inference mode: `pvout_correction`, `price_ahead`, `price_level`.",
     )
     model_path: str | None = Field(default=None, description="Model artifact path.")
+    data_path: str | None = Field(
+        default=None,
+        description="Path to input CSV (e.g. from preprocessor/normalization).",
+    )
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        description="Feature columns the model expects (from preprocessor/decider/trainer).",
+    )
     datetime_column: str | None = Field(
         default=None, description="Datetime column name."
     )
@@ -42,6 +50,10 @@ class InputModel(BaseModel):
 
 class OutputModel(BaseModel):
     message: str = Field(description="Human-readable status message.")
+    forecast_csv_path: str | None = Field(
+        default=None,
+        description="Path to forecast CSV (consumable upstream → evaluator.pred_df_path).",
+    )
     artifacts: dict = Field(
         default_factory=dict,
         description=(

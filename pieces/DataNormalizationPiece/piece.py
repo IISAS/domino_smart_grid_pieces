@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from domino.base_piece import BasePiece
 
 from .models import InputModel, OutputModel
@@ -101,17 +103,46 @@ class DataNormalizationPiece(BasePiece):
 
         payload = input_data.payload_as_dict()
         df = payload.get("dataframe") or payload.get("X") or payload.get("data")
+        data_path = payload.get("data_path")
         normalization_type = payload.get("type") or payload.get("normalization_type")
         features = payload.get("features")
 
         if isinstance(features, str):
             features = [features]
 
+        # Load from CSV path if no inline dataframe was provided.
+        if df is None and data_path:
+            import pandas as pd  # type: ignore
+
+            df = pd.read_csv(data_path)
+
         if df is None:
             self.logger.info("No dataframe provided; skipping normalization.")
             return OutputModel(
                 message="No dataframe provided; skipping normalization.",
                 artifacts={"input_payload": payload},
+            )
+
+        # Passthrough when normalization is disabled. Still emit a CSV so downstream
+        # pieces can plumb `data_path` consistently.
+        if normalization_type is None or str(normalization_type).lower() == "none":
+            df_out = df
+            applied_features = list(getattr(df_out, "columns", []))
+            artifacts = {
+                "normalized_data": _to_serializable_dataframe_like(df_out),
+                "normalization_type": "none",
+                "features": applied_features,
+            }
+            saved_path = self._save_csv(df_out)
+            if saved_path:
+                artifacts["data_path"] = saved_path
+                self.display_result = {"file_type": "txt", "file_path": saved_path}
+            return OutputModel(
+                message="DataNormalizationPiece executed (passthrough).",
+                data_path=saved_path,
+                normalization_type="none",
+                features=applied_features,
+                artifacts=artifacts,
             )
 
         # Work on a copy when possible to avoid surprising callers.
@@ -125,11 +156,28 @@ class DataNormalizationPiece(BasePiece):
             features if features is not None else list(getattr(df_out, "columns", []))
         )
 
+        artifacts = {
+            "normalized_data": _to_serializable_dataframe_like(df_out),
+            "normalization_type": normalization_type,
+            "features": applied_features,
+        }
+        saved_path = self._save_csv(df_out)
+        if saved_path:
+            artifacts["data_path"] = saved_path
+            self.display_result = {"file_type": "txt", "file_path": saved_path}
+
         return OutputModel(
             message="DataNormalizationPiece executed.",
-            artifacts={
-                "normalized_data": _to_serializable_dataframe_like(df_out),
-                "normalization_type": normalization_type,
-                "features": applied_features,
-            },
+            data_path=saved_path,
+            normalization_type=str(normalization_type),
+            features=list(applied_features),
+            artifacts=artifacts,
         )
+
+    def _save_csv(self, df_like):
+        if not hasattr(df_like, "to_csv"):
+            return None
+        out_path = str(Path(self.results_path) / "normalized.csv")
+        Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+        df_like.to_csv(out_path, index=False)
+        return out_path

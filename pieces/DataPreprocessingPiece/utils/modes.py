@@ -4,7 +4,15 @@ def _resolve_features(payload, data, *, target_columns=None):
         return list(configured_features)
 
     excluded = set(target_columns or [])
-    auto_features = [column for column in data.columns if column not in excluded]
+
+    # Auto-select numeric columns only: trainers coerce features via pd.to_numeric, so
+    # date/datetime/string columns would otherwise drop every row.
+    if hasattr(data, "select_dtypes"):
+        numeric_columns = list(data.select_dtypes(include="number").columns)
+    else:
+        numeric_columns = list(getattr(data, "columns", []))
+
+    auto_features = [column for column in numeric_columns if column not in excluded]
     if not auto_features:
         raise ValueError(
             "Could not infer feature columns. Provide `preprocessor_features` in payload."

@@ -5,16 +5,37 @@ class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     normalization_type: str | None = Field(
-        default=None,
-        description="Normalization type: `logaritmic`, `exponential`, `min_max`, or `z_score`.",
+        default="none",
+        title="Normalization Type",
+        description=(
+            "One of: `none`, `min_max`, `z_score`, `logaritmic`, `exponential`. "
+            "Use `none` (passthrough) for tree-based models like XGBoost. "
+            "Usually wired upstream from `ModelDeciderPiece.Normalization Type`."
+        ),
     )
-    features: list[str] | None = Field(
+    features: list[str] = Field(
+        default_factory=list,
+        title="Features",
+        description=(
+            "Optional list of column names to normalize. Empty = apply to all numeric columns. "
+            "Click `+` and add column names like `GHI`, `TEMP`, `WS`."
+        ),
+    )
+    data_path: str | None = Field(
         default=None,
-        description="Optional list of feature/column names to normalize.",
+        title="Data Path",
+        description=(
+            "Path to input CSV. Wire upstream from `DataPreprocessingPiece.Data Path` "
+            "(the preprocessor's `preprocessed.csv`)."
+        ),
     )
     dataframe: str | None = Field(
         default=None,
-        description="Optional JSON object (or upstream object) representing input dataframe-like data.",
+        title="Dataframe",
+        description=(
+            "Optional inline dataframe payload (JSON object). "
+            "Leave empty when `Data Path` is provided."
+        ),
     )
 
     @model_validator(mode="before")
@@ -40,6 +61,18 @@ class InputModel(BaseModel):
 
 class OutputModel(BaseModel):
     message: str = Field(description="Human-readable status message.")
+    data_path: str | None = Field(
+        default=None,
+        description="Path to normalized CSV (consumable upstream → trainer / inference).",
+    )
+    normalization_type: str = Field(
+        default="none",
+        description="Normalization type that was applied.",
+    )
+    features: list[str] = Field(
+        default_factory=list,
+        description="Feature columns that were normalized.",
+    )
     artifacts: dict = Field(
         default_factory=dict,
         description="Optional outputs (e.g., normalized dataset URI, fitted scaler params).",

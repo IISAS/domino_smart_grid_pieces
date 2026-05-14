@@ -9,8 +9,8 @@ import pandas as pd
 
 def load_input_dataframe(payload: dict) -> pd.DataFrame:
     input_cfg = payload.get("input") or {}
-    tabular_data = input_cfg.get("tabular_data")
-    data_path = input_cfg.get("data_path")
+    tabular_data = input_cfg.get("tabular_data") or payload.get("tabular_data")
+    data_path = input_cfg.get("data_path") or payload.get("data_path")
 
     if tabular_data is not None:
         return pd.DataFrame(tabular_data)
@@ -24,7 +24,8 @@ def load_input_dataframe(payload: dict) -> pd.DataFrame:
         raise ValueError(f"Unsupported input format: {p.suffix}")
 
     raise ValueError(
-        "Provide either payload.input.tabular_data or payload.input.data_path"
+        "Provide either `data_path` / `tabular_data` (top-level) or "
+        "`payload.input.data_path` / `payload.input.tabular_data`."
     )
 
 
@@ -55,7 +56,11 @@ def load_model_object(payload: dict) -> Any:
     if suffix == ".pkl":
         import joblib
 
-        return joblib.load(model_path)
+        obj = joblib.load(model_path)
+        # Trainer pickles `{"metadata": ..., "trained_model_object": model}`.
+        if isinstance(obj, dict) and "trained_model_object" in obj:
+            return obj["trained_model_object"]
+        return obj
 
     if suffix in {".json", ".ubj", ".bin", ".model"}:
         import xgboost as xgb

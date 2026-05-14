@@ -23,8 +23,8 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
         model_type = str(payload.get("model_type", "linear_regression_model")).lower()
         model_params = payload.get("model_params") or {}
         setup = payload.get("model_setup") or {}
-        feature_columns = setup.get("feature_columns")
-        target_column = setup.get("target_column", "PVOUT")
+        feature_columns = setup.get("feature_columns") or payload.get("feature_columns")
+        target_column = setup.get("target_column") or payload.get("target_column", "PVOUT")
 
         if model_type not in MODEL_TYPES:
             raise ValueError(
@@ -81,16 +81,20 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
         model = create_model(model_type=model_type, model_params=model_params)
         model.train(X, y)
 
+        artifacts = self._build_artifacts(
+            model=model,
+            model_type=model_type,
+            feature_columns=feature_columns,
+            target_column=target_column,
+            model_params=model_params,
+            payload=payload,
+        )
         return OutputModel(
             message="PVOUTPredictionModelTrainPiece executed.",
-            artifacts=self._build_artifacts(
-                model=model,
-                model_type=model_type,
-                feature_columns=feature_columns,
-                target_column=target_column,
-                model_params=model_params,
-                payload=payload,
-            ),
+            model_path=artifacts.get("checkpoint_path"),
+            feature_columns=list(feature_columns),
+            target_column=str(target_column),
+            artifacts=artifacts,
         )
 
     def _build_artifacts(
