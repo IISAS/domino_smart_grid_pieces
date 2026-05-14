@@ -54,6 +54,18 @@
                     "title": "Plot",
                     "type": "boolean"
                 },
+                "forecast_column": {
+                    "default": "final_forecast",
+                    "description": "Name of the predicted-value column in pred_df. Defaults to `final_forecast` (from InferencePiece). Switch to `correction` when evaluating the raw model output in pvout_correction mode.",
+                    "title": "Forecast Column",
+                    "type": "string"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Name of the ground-truth column in pred_df. Default `PVOUT`.",
+                    "title": "Target Column",
+                    "type": "string"
+                },
                 "pred_df_path": {
                     "anyOf": [
                         {
@@ -612,7 +624,7 @@
         "name": "DataPreprocessingPiece",
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_4.txt"
+            "requirements_file": "requirements_0.txt"
         },
         "tags": [
             "Template",
