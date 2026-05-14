@@ -191,12 +191,12 @@
                             "type": "null"
                         }
                     ],
-                    "default": null,
-                    "description": "Normalization type: `logaritmic`, `exponential`, `min_max`, `z_score`, or `none` to passthrough.",
+                    "default": "none",
+                    "description": "One of: `none`, `min_max`, `z_score`, `logaritmic`, `exponential`. Use `none` (passthrough) for tree-based models like XGBoost. Usually wired upstream from `ModelDeciderPiece.Normalization Type`.",
                     "title": "Normalization Type"
                 },
                 "features": {
-                    "description": "Optional list of feature/column names to normalize. Empty = all columns.",
+                    "description": "Optional list of column names to normalize. Empty = apply to all numeric columns. Click `+` and add column names like `GHI`, `TEMP`, `WS`.",
                     "items": {
                         "type": "string"
                     },
@@ -213,7 +213,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "Path to input CSV (e.g. from DataPreprocessingPiece.data_path).",
+                    "description": "Path to input CSV. Wire upstream from `DataPreprocessingPiece.Data Path` (the preprocessor's `preprocessed.csv`).",
                     "title": "Data Path"
                 },
                 "dataframe": {
@@ -226,7 +226,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "Optional inline dataframe payload (used when no `data_path` is provided).",
+                    "description": "Optional inline dataframe payload (JSON object). Leave empty when `Data Path` is provided.",
                     "title": "Dataframe"
                 }
             },
@@ -974,7 +974,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "Problem type for model selection.",
+                    "description": "Forecasting problem this DAG addresses. One of: `pvout_prediction`, `pvout_error_correction`, `price_prediction`. Currently informational only \u2014 the decider does not branch on this value yet.",
                     "title": "Problem Type"
                 },
                 "horizon": {
@@ -986,12 +986,12 @@
                             "type": "null"
                         }
                     ],
-                    "default": null,
-                    "description": "Prediction horizon.",
+                    "default": 1,
+                    "description": "Prediction horizon in steps. Examples: `1` for single-step forecasting, `96` for 24 hours at 15-minute resolution.",
                     "title": "Horizon"
                 },
                 "available_models": {
-                    "description": "Available model identifiers.",
+                    "description": "Candidate model identifiers. Click `+` to add one or more of: `xgb_regressor_model`, `linear_regression_model`, `interval_xgb_regressor_model`, `eda_rule_baseline`, `tabpfn_regressor_model`. The decider picks `xgb_regressor_model` when available.",
                     "items": {
                         "type": "string"
                     },
@@ -999,7 +999,7 @@
                     "type": "array"
                 },
                 "feature_columns": {
-                    "description": "Echoed feature columns (so downstream trainer/inference can wire it).",
+                    "description": "Optional explicit feature list. Usually left empty \u2014 downstream trainer/inference should wire its own `Feature Columns` directly from the preprocessor.",
                     "items": {
                         "type": "string"
                     },
@@ -1015,8 +1015,8 @@
                             "type": "null"
                         }
                     ],
-                    "default": null,
-                    "description": "Echoed target column name (default `PVOUT`).",
+                    "default": "PVOUT",
+                    "description": "Target column name to forecast. Default `PVOUT` for solargis-style datasets.",
                     "title": "Target Column"
                 }
             },
