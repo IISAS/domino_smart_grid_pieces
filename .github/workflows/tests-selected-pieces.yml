@@ -9,12 +9,11 @@ on:
         type: string
   push:
     branches:
-      - dev3
+      - dev
   pull_request:
     branches:
       - main
       - dev
-      - dev3
     paths:
       - "pieces/**"
       - "requirements-tests.txt"
