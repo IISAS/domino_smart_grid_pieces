@@ -111,7 +111,18 @@ jobs:
         working-directory: ${{ env.CI_WORKDIR }}
         env:
           GHCR_USERNAME: ${{ github.actor }}
-        run: domino piece publish-images --registry-token ${{ secrets.GITHUB_TOKEN }}
+          # Helps with large image pushes and slow runner networking.
+          DOCKER_CLIENT_TIMEOUT: "300"
+          COMPOSE_HTTP_TIMEOUT: "300"
+        run: |
+          echo "Publishing images (up to 3 attempts)..."
+          for i in 1 2 3; do
+            domino piece publish-images --registry-token ${{ secrets.GITHUB_TOKEN }} && exit 0
+            echo "Attempt $i failed."
+            sleep 20
+          done
+          echo "Publish failed after retries."
+          exit 1
 
       - name: Sync generated domino metadata back
         shell: bash
