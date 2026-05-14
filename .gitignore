@@ -136,3 +136,4 @@ dmypy.json
 # jupyter
 .ipynb_checkpoints
 *.ipynb
+.claude/settings.local.json
