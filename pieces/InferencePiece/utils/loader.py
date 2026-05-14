@@ -56,7 +56,11 @@ def load_model_object(payload: dict) -> Any:
     if suffix == ".pkl":
         import joblib
 
-        return joblib.load(model_path)
+        obj = joblib.load(model_path)
+        # Trainer pickles `{"metadata": ..., "trained_model_object": model}`.
+        if isinstance(obj, dict) and "trained_model_object" in obj:
+            return obj["trained_model_object"]
+        return obj
 
     if suffix in {".json", ".ubj", ".bin", ".model"}:
         import xgboost as xgb
