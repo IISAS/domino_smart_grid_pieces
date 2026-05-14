@@ -36,7 +36,13 @@ class EvaluateMLModelPiece(BasePiece):
         if pred_df is None and payload.get("pred_df_path"):
             import pandas as pd  # type: ignore
 
-            pred_df = pd.read_csv(payload["pred_df_path"]).to_dict(orient="records")
+            pred_df = pd.read_csv(payload["pred_df_path"])
+
+        # If pred_df arrived as a list of records (inline JSON), promote it to a DataFrame.
+        if isinstance(pred_df, list):
+            import pandas as pd  # type: ignore
+
+            pred_df = pd.DataFrame(pred_df)
 
         plot = bool(payload.get("plot", False))
         baseline_id = int(payload.get("baseline_id", 1))
@@ -72,9 +78,11 @@ class EvaluateMLModelPiece(BasePiece):
             if true_baseline_df is None and payload.get("true_baseline_df_path"):
                 import pandas as pd  # type: ignore
 
-                true_baseline_df = pd.read_csv(payload["true_baseline_df_path"]).to_dict(
-                    orient="records"
-                )
+                true_baseline_df = pd.read_csv(payload["true_baseline_df_path"])
+            if isinstance(true_baseline_df, list):
+                import pandas as pd  # type: ignore
+
+                true_baseline_df = pd.DataFrame(true_baseline_df)
 
             if y_true is not None:
                 metrics = evaluator.evaluate(
