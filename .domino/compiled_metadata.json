@@ -136,315 +136,6 @@
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataNormalizationPiece"
     },
-    "EvaluateMLModelPiece": {
-        "name": "EvaluateMLModelPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "Template",
-            "Model",
-            "Evaluation"
-        ],
-        "style": {
-            "node_label": "Evaluate ML Model",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:clipboard-check",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 1024
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "evaluation_option": {
-                    "default": "normal",
-                    "description": "Evaluation mode: `normal` or `errorcorrection`.",
-                    "title": "Evaluation Option",
-                    "type": "string"
-                },
-                "baseline_id": {
-                    "default": 1,
-                    "description": "Baseline horizon id.",
-                    "title": "Baseline Id",
-                    "type": "integer"
-                },
-                "plot": {
-                    "default": false,
-                    "description": "Whether to generate plots/heatmaps.",
-                    "title": "Plot",
-                    "type": "boolean"
-                },
-                "forecast_column": {
-                    "default": "final_forecast",
-                    "description": "Name of the predicted-value column in pred_df. Defaults to `final_forecast` (from InferencePiece). Switch to `correction` when evaluating the raw model output in pvout_correction mode.",
-                    "title": "Forecast Column",
-                    "type": "string"
-                },
-                "target_column": {
-                    "default": "PVOUT",
-                    "description": "Name of the ground-truth column in pred_df. Default `PVOUT`.",
-                    "title": "Target Column",
-                    "type": "string"
-                },
-                "pred_df_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to predictions CSV (e.g. inference.forecast_csv_path).",
-                    "title": "Pred Df Path"
-                },
-                "true_baseline_df_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to true-baseline CSV for errorcorrection mode.",
-                    "title": "True Baseline Df Path"
-                },
-                "pred_df": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Inline predictions payload as JSON object.",
-                    "title": "Pred Df"
-                },
-                "true_baseline_df": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional baseline payload as JSON object.",
-                    "title": "True Baseline Df"
-                },
-                "y_true": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional true values as JSON array.",
-                    "title": "Y True"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., metrics JSON, plots, report URI).",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
-    },
-    "SyntheticDataGeneratorPiece": {
-        "name": "SyntheticDataGeneratorPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "SyntheticData",
-            "Generator",
-            "Simulation"
-        ],
-        "style": {
-            "node_label": "Synthetic Data Generator",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:database",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Generate synthetic tabular datasets for multiple smart-grid data domains in batch or realtime-like mode.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 512
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "dataset_type": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "One of: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` (aliases like `SoalrGIS Dataset` and `shmi` are also accepted).",
-                    "title": "Dataset Type"
-                },
-                "output_mode": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "One of: `batch_sample`, `realtime_stream`.",
-                    "title": "Output Mode"
-                },
-                "output_format": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "One of: `json`, `csv`.",
-                    "title": "Output Format"
-                },
-                "records_count": {
-                    "default": 20,
-                    "description": "Number of records to generate.",
-                    "title": "Records Count",
-                    "type": "integer"
-                },
-                "time_step_minutes": {
-                    "default": 15,
-                    "description": "Time step between generated records in minutes.",
-                    "title": "Time Step Minutes",
-                    "type": "integer"
-                },
-                "interval_ms": {
-                    "default": 1000,
-                    "description": "Realtime interval hint in milliseconds.",
-                    "title": "Interval Ms",
-                    "type": "integer"
-                },
-                "start_at": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional start datetime in ISO format.",
-                    "title": "Start At"
-                },
-                "seed": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional random seed for reproducible synthetic data.",
-                    "title": "Seed"
-                },
-                "timezone_offset_hours": {
-                    "default": 1.0,
-                    "description": "Timezone offset used by SolarGIS-like records.",
-                    "title": "Timezone Offset Hours",
-                    "type": "number"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "file_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "title": "Dataset file path"
-                }
-            },
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/SyntheticDataGeneratorPiece"
-    },
     "DataPreprocessingPiece": {
         "name": "DataPreprocessingPiece",
         "dependency": {
@@ -600,158 +291,31 @@
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataPreprocessingPiece"
     },
-    "ExplainablePredictionPiece": {
-        "name": "ExplainablePredictionPiece",
+    "PVOUTPredictionModelTrainPiece": {
+        "name": "PVOUTPredictionModelTrainPiece",
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "Template",
-            "Model",
-            "Explainability"
-        ],
-        "style": {
-            "node_label": "Explainable Prediction",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:magnifying-glass-chart",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Template piece for generating prediction explanations (e.g., feature attributions) alongside inference results.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 1024
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "explain": {
-                    "default": false,
-                    "description": "Enable explainability run.",
-                    "title": "Explain",
-                    "type": "boolean"
-                },
-                "explain_method": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "`lime` or `shap`.",
-                    "title": "Explain Method"
-                },
-                "use_diagnostic_loss": {
-                    "default": false,
-                    "description": "Enable diagnostic heatmap artifacts.",
-                    "title": "Use Diagnostic Loss",
-                    "type": "boolean"
-                },
-                "model": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional model payload as JSON.",
-                    "title": "Model"
-                },
-                "data": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional data payload as JSON.",
-                    "title": "Data"
-                },
-                "x_train": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional x_train payload as JSON.",
-                    "title": "X Train"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., explanation report URI, attribution arrays).",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ExplainablePredictionPiece"
-    },
-    "ElectricityPricePredictionModelTrainPiece": {
-        "name": "ElectricityPricePredictionModelTrainPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_1.txt"
+            "requirements_file": "requirements_2.txt"
         },
         "tags": [
             "Template",
             "Train",
-            "ElectricityPrice",
+            "PVOUT",
             "Prediction"
         ],
         "style": {
-            "node_label": "Train Electricity Price Model",
+            "node_label": "Train PVOUT Prediction Model",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:chart-line",
+            "icon_class_name": "fa-solid:brain",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "Template piece for training an electricity price prediction model.",
+        "description": "Template piece for training a PVOUT prediction model.",
         "container_resources": {
             "requests": {
                 "cpu": 200,
@@ -765,6 +329,19 @@
         "input_schema": {
             "additionalProperties": true,
             "properties": {
+                "model_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Training model type.",
+                    "title": "Model Type"
+                },
                 "data_path": {
                     "anyOf": [
                         {
@@ -791,7 +368,15 @@
                     "description": "Alias for input CSV path.",
                     "title": "Csv Path"
                 },
-                "output_dir": {
+                "feature_columns": {
+                    "description": "Feature columns used for training (consumed from preprocessor/decider).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -801,10 +386,10 @@
                         }
                     ],
                     "default": null,
-                    "description": "Output directory.",
-                    "title": "Output Dir"
+                    "description": "Target column name (defaults to `PVOUT`).",
+                    "title": "Target Column"
                 },
-                "model_filename": {
+                "checkpoint_dir": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -814,21 +399,8 @@
                         }
                     ],
                     "default": null,
-                    "description": "Model output filename.",
-                    "title": "Model Filename"
-                },
-                "save_enriched_csv": {
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Save enriched CSV when target_source=okte.",
-                    "title": "Save Enriched Csv"
+                    "description": "Optional checkpoint directory.",
+                    "title": "Checkpoint Dir"
                 }
             },
             "title": "InputModel",
@@ -841,8 +413,35 @@
                     "title": "Message",
                     "type": "string"
                 },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to trained model checkpoint (consumable upstream \u2192 inference.model_path).",
+                    "title": "Model Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns used at training time (consumable upstream \u2192 inference.feature_columns).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Target column used at training time.",
+                    "title": "Target Column",
+                    "type": "string"
+                },
                 "artifacts": {
-                    "description": "Training outputs: `model_path`, `preprocessing_metadata_path`, `train_metrics`, `train_rows`, `fallback_used`; optional `enriched_csv_path`.",
+                    "description": "Optional outputs (e.g., trained model URI, training metrics).",
                     "title": "Artifacts",
                     "type": "object"
                 }
@@ -854,164 +453,7 @@
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ElectricityPricePredictionModelTrainPiece"
-    },
-    "TestGpuSupprtPiece": {
-        "name": "TestGpuSupprtPiece",
-        "dependency": {
-            "dockerfile": "Dockerfile.pytorch-gpu",
-            "requirements_file": null
-        },
-        "tags": [
-            "PyTorch",
-            "GPU",
-            "diagnostics"
-        ],
-        "style": {
-            "node_label": "Test PyTorch GPU",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-duotone fa-solid fa-right-to-bracket",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Piece that starts PyTorch in a GPU container and reports CUDA devices and a small GPU matmul probe.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 512
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 2048
-            },
-            "use_gpu": true
-        },
-        "input_schema": {
-            "description": "TestGpuSupprt Input Model",
-            "properties": {},
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "description": "TestGpuSupprt Output Model",
-            "properties": {
-                "pytorch_version": {
-                    "description": "Loaded PyTorch version.",
-                    "title": "Pytorch Version",
-                    "type": "string"
-                },
-                "cuda_available": {
-                    "description": "Whether PyTorch can access CUDA at runtime.",
-                    "title": "Cuda Available",
-                    "type": "boolean"
-                },
-                "cuda_version": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "description": "CUDA version PyTorch was built against.",
-                    "title": "Cuda Version"
-                },
-                "cudnn_version": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "description": "cuDNN version when available.",
-                    "title": "Cudnn Version"
-                },
-                "device_count": {
-                    "description": "Number of CUDA devices visible to PyTorch.",
-                    "title": "Device Count",
-                    "type": "integer"
-                },
-                "devices": {
-                    "description": "CUDA device metadata reported by PyTorch.",
-                    "items": {
-                        "type": "object"
-                    },
-                    "title": "Devices",
-                    "type": "array"
-                },
-                "current_device": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "description": "Current CUDA device index when a GPU is available.",
-                    "title": "Current Device"
-                },
-                "gpu_available": {
-                    "description": "True when PyTorch sees at least one CUDA device.",
-                    "title": "Gpu Available",
-                    "type": "boolean"
-                },
-                "gpu_operation_result": {
-                    "anyOf": [
-                        {
-                            "items": {
-                                "items": {
-                                    "type": "number"
-                                },
-                                "type": "array"
-                            },
-                            "type": "array"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "description": "Result of a small PyTorch matmul on GPU when available.",
-                    "title": "Gpu Operation Result"
-                },
-                "gpu_operation_error": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "description": "Error from the small PyTorch GPU operation when it could not run.",
-                    "title": "Gpu Operation Error"
-                }
-            },
-            "required": [
-                "pytorch_version",
-                "cuda_available",
-                "cuda_version",
-                "cudnn_version",
-                "device_count",
-                "devices",
-                "current_device",
-                "gpu_available",
-                "gpu_operation_result",
-                "gpu_operation_error"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/TestGpuSupprtPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTPredictionModelTrainPiece"
     },
     "ModelDeciderPiece": {
         "name": "ModelDeciderPiece",
@@ -1169,6 +611,164 @@
         },
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ModelDeciderPiece"
+    },
+    "EvaluateMLModelPiece": {
+        "name": "EvaluateMLModelPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Evaluation"
+        ],
+        "style": {
+            "node_label": "Evaluate ML Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:clipboard-check",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 1024
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "evaluation_option": {
+                    "default": "normal",
+                    "description": "Evaluation mode: `normal` or `errorcorrection`.",
+                    "title": "Evaluation Option",
+                    "type": "string"
+                },
+                "baseline_id": {
+                    "default": 1,
+                    "description": "Baseline horizon id.",
+                    "title": "Baseline Id",
+                    "type": "integer"
+                },
+                "plot": {
+                    "default": false,
+                    "description": "Whether to generate plots/heatmaps.",
+                    "title": "Plot",
+                    "type": "boolean"
+                },
+                "forecast_column": {
+                    "default": "final_forecast",
+                    "description": "Name of the predicted-value column in pred_df. Defaults to `final_forecast` (from InferencePiece). Switch to `correction` when evaluating the raw model output in pvout_correction mode.",
+                    "title": "Forecast Column",
+                    "type": "string"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Name of the ground-truth column in pred_df. Default `PVOUT`.",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "pred_df_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to predictions CSV (e.g. inference.forecast_csv_path).",
+                    "title": "Pred Df Path"
+                },
+                "true_baseline_df_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to true-baseline CSV for errorcorrection mode.",
+                    "title": "True Baseline Df Path"
+                },
+                "pred_df": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Inline predictions payload as JSON object.",
+                    "title": "Pred Df"
+                },
+                "true_baseline_df": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional baseline payload as JSON object.",
+                    "title": "True Baseline Df"
+                },
+                "y_true": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional true values as JSON array.",
+                    "title": "Y True"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., metrics JSON, plots, report URI).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
     },
     "InferencePiece": {
         "name": "InferencePiece",
@@ -1345,129 +945,61 @@
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
     },
-    "PVOUTPredictionModelTrainPiece": {
-        "name": "PVOUTPredictionModelTrainPiece",
+    "TestGpuSupprtPiece": {
+        "name": "TestGpuSupprtPiece",
         "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_2.txt"
+            "dockerfile": "Dockerfile.pytorch-gpu",
+            "requirements_file": null
         },
         "tags": [
-            "Template",
-            "Train",
-            "PVOUT",
-            "Prediction"
+            "PyTorch",
+            "GPU",
+            "diagnostics"
         ],
         "style": {
-            "node_label": "Train PVOUT Prediction Model",
+            "node_label": "Test PyTorch GPU",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:brain",
+            "icon_class_name": "fa-duotone fa-solid fa-right-to-bracket",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "Template piece for training a PVOUT prediction model.",
+        "description": "Piece that starts PyTorch in a GPU container and reports CUDA devices and a small GPU matmul probe.",
         "container_resources": {
             "requests": {
-                "cpu": 200,
-                "memory": 256
+                "cpu": 100,
+                "memory": 512
             },
             "limits": {
-                "cpu": 1000,
+                "cpu": 500,
                 "memory": 2048
-            }
+            },
+            "use_gpu": true
         },
         "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "model_type": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Training model type.",
-                    "title": "Model Type"
-                },
-                "data_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Input CSV path.",
-                    "title": "Data Path"
-                },
-                "csv_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Alias for input CSV path.",
-                    "title": "Csv Path"
-                },
-                "feature_columns": {
-                    "description": "Feature columns used for training (consumed from preprocessor/decider).",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Feature Columns",
-                    "type": "array"
-                },
-                "target_column": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Target column name (defaults to `PVOUT`).",
-                    "title": "Target Column"
-                },
-                "checkpoint_dir": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional checkpoint directory.",
-                    "title": "Checkpoint Dir"
-                }
-            },
+            "description": "TestGpuSupprt Input Model",
+            "properties": {},
             "title": "InputModel",
             "type": "object"
         },
         "output_schema": {
+            "description": "TestGpuSupprt Output Model",
             "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
+                "pytorch_version": {
+                    "description": "Loaded PyTorch version.",
+                    "title": "Pytorch Version",
                     "type": "string"
                 },
-                "model_path": {
+                "cuda_available": {
+                    "description": "Whether PyTorch can access CUDA at runtime.",
+                    "title": "Cuda Available",
+                    "type": "boolean"
+                },
+                "cuda_version": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -1476,78 +1008,138 @@
                             "type": "null"
                         }
                     ],
-                    "default": null,
-                    "description": "Path to trained model checkpoint (consumable upstream \u2192 inference.model_path).",
-                    "title": "Model Path"
+                    "description": "CUDA version PyTorch was built against.",
+                    "title": "Cuda Version"
                 },
-                "feature_columns": {
-                    "description": "Feature columns used at training time (consumable upstream \u2192 inference.feature_columns).",
+                "cudnn_version": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "cuDNN version when available.",
+                    "title": "Cudnn Version"
+                },
+                "device_count": {
+                    "description": "Number of CUDA devices visible to PyTorch.",
+                    "title": "Device Count",
+                    "type": "integer"
+                },
+                "devices": {
+                    "description": "CUDA device metadata reported by PyTorch.",
                     "items": {
-                        "type": "string"
+                        "type": "object"
                     },
-                    "title": "Feature Columns",
+                    "title": "Devices",
                     "type": "array"
                 },
-                "target_column": {
-                    "default": "PVOUT",
-                    "description": "Target column used at training time.",
-                    "title": "Target Column",
-                    "type": "string"
+                "current_device": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "Current CUDA device index when a GPU is available.",
+                    "title": "Current Device"
                 },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., trained model URI, training metrics).",
-                    "title": "Artifacts",
-                    "type": "object"
+                "gpu_available": {
+                    "description": "True when PyTorch sees at least one CUDA device.",
+                    "title": "Gpu Available",
+                    "type": "boolean"
+                },
+                "gpu_operation_result": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "items": {
+                                    "type": "number"
+                                },
+                                "type": "array"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "Result of a small PyTorch matmul on GPU when available.",
+                    "title": "Gpu Operation Result"
+                },
+                "gpu_operation_error": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "Error from the small PyTorch GPU operation when it could not run.",
+                    "title": "Gpu Operation Error"
                 }
             },
             "required": [
-                "message"
+                "pytorch_version",
+                "cuda_available",
+                "cuda_version",
+                "cudnn_version",
+                "device_count",
+                "devices",
+                "current_device",
+                "gpu_available",
+                "gpu_operation_result",
+                "gpu_operation_error"
             ],
             "title": "OutputModel",
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTPredictionModelTrainPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/TestGpuSupprtPiece"
     },
-    "PVOUTErrorCorrectionModelTrainPiece": {
-        "name": "PVOUTErrorCorrectionModelTrainPiece",
+    "SyntheticDataGeneratorPiece": {
+        "name": "SyntheticDataGeneratorPiece",
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_1.txt"
+            "requirements_file": "requirements_0.txt"
         },
         "tags": [
-            "Template",
-            "Train",
-            "PVOUT",
-            "ErrorCorrection"
+            "SyntheticData",
+            "Generator",
+            "Simulation"
         ],
         "style": {
-            "node_label": "Train PVOUT Error Correction Model",
+            "node_label": "Synthetic Data Generator",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:sliders",
+            "icon_class_name": "fa-solid:database",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "Template piece for training a PVOUT error-correction model.",
+        "description": "Generate synthetic tabular datasets for multiple smart-grid data domains in batch or realtime-like mode.",
         "container_resources": {
             "requests": {
-                "cpu": 200,
-                "memory": 256
+                "cpu": 100,
+                "memory": 128
             },
             "limits": {
-                "cpu": 1000,
-                "memory": 2048
+                "cpu": 500,
+                "memory": 512
             }
         },
         "input_schema": {
             "additionalProperties": true,
             "properties": {
-                "model_type": {
+                "dataset_type": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -1557,10 +1149,10 @@
                         }
                     ],
                     "default": null,
-                    "description": "Training model type.",
-                    "title": "Model Type"
+                    "description": "One of: `solargis`, `microstep`, `shmu`, `okte`, `battery`, `machine` (aliases like `SoalrGIS Dataset` and `shmi` are also accepted).",
+                    "title": "Dataset Type"
                 },
-                "data_path": {
+                "output_mode": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -1570,10 +1162,10 @@
                         }
                     ],
                     "default": null,
-                    "description": "Input CSV path.",
-                    "title": "Data Path"
+                    "description": "One of: `batch_sample`, `realtime_stream`.",
+                    "title": "Output Mode"
                 },
-                "csv_path": {
+                "output_format": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -1583,10 +1175,28 @@
                         }
                     ],
                     "default": null,
-                    "description": "Alias for input CSV path.",
-                    "title": "Csv Path"
+                    "description": "One of: `json`, `csv`.",
+                    "title": "Output Format"
                 },
-                "checkpoint_dir": {
+                "records_count": {
+                    "default": 20,
+                    "description": "Number of records to generate.",
+                    "title": "Records Count",
+                    "type": "integer"
+                },
+                "time_step_minutes": {
+                    "default": 15,
+                    "description": "Time step between generated records in minutes.",
+                    "title": "Time Step Minutes",
+                    "type": "integer"
+                },
+                "interval_ms": {
+                    "default": 1000,
+                    "description": "Realtime interval hint in milliseconds.",
+                    "title": "Interval Ms",
+                    "type": "integer"
+                },
+                "start_at": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -1596,8 +1206,27 @@
                         }
                     ],
                     "default": null,
-                    "description": "Optional checkpoint directory.",
-                    "title": "Checkpoint Dir"
+                    "description": "Optional start datetime in ISO format.",
+                    "title": "Start At"
+                },
+                "seed": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional random seed for reproducible synthetic data.",
+                    "title": "Seed"
+                },
+                "timezone_offset_hours": {
+                    "default": 1.0,
+                    "description": "Timezone offset used by SolarGIS-like records.",
+                    "title": "Timezone Offset Hours",
+                    "type": "number"
                 }
             },
             "title": "InputModel",
@@ -1605,24 +1234,23 @@
         },
         "output_schema": {
             "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., trained corrector URI, evaluation metrics).",
-                    "title": "Artifacts",
-                    "type": "object"
+                "file_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Dataset file path"
                 }
             },
-            "required": [
-                "message"
-            ],
             "title": "OutputModel",
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTErrorCorrectionModelTrainPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/SyntheticDataGeneratorPiece"
     }
 }
