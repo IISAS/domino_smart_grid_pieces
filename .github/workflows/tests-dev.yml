@@ -3,7 +3,7 @@ name: Run tests on dev branch
 on:
   push:
     branches:
-      - dev
+      - dev2
     paths:
       - "config.toml"
       - "pieces/**"
@@ -26,7 +26,7 @@ jobs:
 
       - name: Compute image tag prefix
         shell: bash
-        run: echo "TAG_PREFIX=development" >> "$GITHUB_ENV"
+        run: echo "TAG_PREFIX=dev2" >> "$GITHUB_ENV"
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
