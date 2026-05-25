@@ -1230,6 +1230,19 @@
                     ],
                     "default": null,
                     "title": "Dataset file path"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Suggested target column for the generated dataset (pass downstream via fromUpstream).",
+                    "title": "Target column"
                 }
             },
             "title": "OutputModel",
