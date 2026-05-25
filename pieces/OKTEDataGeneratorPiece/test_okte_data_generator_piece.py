@@ -16,7 +16,7 @@ def test_okte_data_generator_piece_smoke():
 def test_okte_data_generator_piece_batch_json():
     output = piece_dry_run(
         "OKTEDataGeneratorPiece",
-        {"records_count": 5, "time_step_minutes": 15, "seed": 42},
+        {"records_count": 5, "time_step_minutes": 15, "output_format": "json", "seed": 42},
     )
     file_path = output["file_path"]
     assert file_path is not None
