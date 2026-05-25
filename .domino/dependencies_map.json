@@ -20,7 +20,8 @@
             "requirements_file": "requirements_2.txt"
         },
         "pieces": [
-            "PVOUTPredictionModelTrainPiece"
+            "PVOUTPredictionModelTrainPiece",
+            "ElectricityPricePredictionModelTrainPiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev2-group1"
