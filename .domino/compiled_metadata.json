@@ -1,4 +1,133 @@
 {
+    "ElectricityPricePredictionModelTrainPiece": {
+        "name": "ElectricityPricePredictionModelTrainPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_1.txt"
+        },
+        "tags": [
+            "Template",
+            "Train",
+            "ElectricityPrice",
+            "Prediction"
+        ],
+        "style": {
+            "node_label": "Train Electricity Price Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:chart-line",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for training an electricity price prediction model.",
+        "container_resources": {
+            "requests": {
+                "cpu": 200,
+                "memory": 256
+            },
+            "limits": {
+                "cpu": 1000,
+                "memory": 2048
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Input CSV path.",
+                    "title": "Data Path"
+                },
+                "csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Alias for input CSV path.",
+                    "title": "Csv Path"
+                },
+                "output_dir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Output directory.",
+                    "title": "Output Dir"
+                },
+                "model_filename": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Model output filename.",
+                    "title": "Model Filename"
+                },
+                "save_enriched_csv": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Save enriched CSV when target_source=okte.",
+                    "title": "Save Enriched Csv"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Training outputs: `model_path`, `preprocessing_metadata_path`, `train_metrics`, `train_rows`, `fallback_used`; optional `enriched_csv_path`.",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ElectricityPricePredictionModelTrainPiece"
+    },
     "DataNormalizationPiece": {
         "name": "DataNormalizationPiece",
         "dependency": {
@@ -454,135 +583,6 @@
         },
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTPredictionModelTrainPiece"
-    },
-    "ElectricityPricePredictionModelTrainPiece": {
-        "name": "ElectricityPricePredictionModelTrainPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_1.txt"
-        },
-        "tags": [
-            "Template",
-            "Train",
-            "ElectricityPrice",
-            "Prediction"
-        ],
-        "style": {
-            "node_label": "Train Electricity Price Model",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:chart-line",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Template piece for training an electricity price prediction model.",
-        "container_resources": {
-            "requests": {
-                "cpu": 200,
-                "memory": 256
-            },
-            "limits": {
-                "cpu": 1000,
-                "memory": 2048
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "data_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Input CSV path.",
-                    "title": "Data Path"
-                },
-                "csv_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Alias for input CSV path.",
-                    "title": "Csv Path"
-                },
-                "output_dir": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Output directory.",
-                    "title": "Output Dir"
-                },
-                "model_filename": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Model output filename.",
-                    "title": "Model Filename"
-                },
-                "save_enriched_csv": {
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Save enriched CSV when target_source=okte.",
-                    "title": "Save Enriched Csv"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Training outputs: `model_path`, `preprocessing_metadata_path`, `train_metrics`, `train_rows`, `fallback_used`; optional `enriched_csv_path`.",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ElectricityPricePredictionModelTrainPiece"
     },
     "ModelDeciderPiece": {
         "name": "ModelDeciderPiece",
