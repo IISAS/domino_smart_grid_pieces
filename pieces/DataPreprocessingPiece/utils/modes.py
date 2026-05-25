@@ -108,7 +108,8 @@ def preprocess_prediction(payload):
             "Expected a `datetime`, `timestamp_utc`, or `Date`+`Time` column."
         )
 
-    target_col = str(payload.get("target_column", "PVOUT"))
+    target_col_input = payload.get("target_column")
+    target_col = str(target_col_input) if target_col_input else "PVOUT"
 
     if df is None:
         if not data_path:
@@ -134,11 +135,27 @@ def preprocess_prediction(payload):
         data.to_csv(save_data_path, index=False)
 
     if target_col not in data.columns:
-        raise ValueError(
-            f"Target column `{target_col}` not found in data. "
-            f"Available columns: {list(data.columns)}. "
-            "Pass `target_column` in piece input to match your dataset."
-        )
+        if target_col_input is not None:
+            raise ValueError(
+                f"Target column `{target_col}` not found in data. "
+                f"Available columns: {list(data.columns)}. "
+                "Pass `target_column` in piece input to match your dataset."
+            )
+        # Default PVOUT not found — dataset has no standard target (e.g. OKTE).
+        # Return only X so downstream normalization/inference pieces still work.
+        features = _resolve_features(payload, data, target_columns=[])
+        if keep_datetime and "datetime" in data.columns and "datetime" not in features:
+            features = ["datetime"] + features
+        X = data[features]
+        return {
+            "message": "DataPreprocessingPiece executed (prediction, no target column).",
+            "artifacts": {
+                "X": to_jsonable_df(X),
+                "y": {},
+                "features": features,
+                "target_column": None,
+            },
+        }
 
     features = _resolve_features(payload, data, target_columns=[target_col])
     if keep_datetime and "datetime" in data.columns and "datetime" not in features:

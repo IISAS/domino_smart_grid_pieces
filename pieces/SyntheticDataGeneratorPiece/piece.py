@@ -8,7 +8,7 @@ import json
 
 from domino.base_piece import BasePiece
 
-from .models import InputModel, OutputModel
+from .models import DATASET_DEFAULT_TARGET, InputModel, OutputModel
 
 RecordFactory = Callable[[datetime], dict[str, Any]]
 
@@ -92,7 +92,6 @@ def _okte_record(ts: datetime, tz_offset_hours: float = 1.0) -> dict[str, Any]:
     return {
         "Date": local_ts.strftime("%d.%m.%Y"),
         "Time": local_ts.strftime("%H:%M"),
-        "timestamp_utc": ts.isoformat(),
         "market_area": "SK",
         "imbalance_mw": round(random.uniform(-280, 260), 3),
         "spot_price_eur_mwh": round(random.uniform(25, 220), 2),
@@ -302,6 +301,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
 
             return OutputModel(
                 file_path=file_path,
+                target_column=DATASET_DEFAULT_TARGET.get(dataset_type),
             )
         except Exception:
             self.logger.exception(
