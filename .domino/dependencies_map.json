@@ -21,6 +21,7 @@
             "DataPreprocessingPiece",
             "ModelDeciderPiece",
             "EvaluateMLModelPiece",
+            "OKTESyntheticDataGeneratorPiece",
             "SyntheticDataGeneratorPiece"
         ],
         "secrets": [],
