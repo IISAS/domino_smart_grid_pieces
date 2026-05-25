@@ -23,9 +23,9 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
 
         model_type = str(payload.get("model_type", "linear_regression")).lower()
         model_params = payload.get("model_params") or {}
-        setup = payload.get("model_setup") or {}
-        feature_columns = setup.get("feature_columns")
-        target_column = setup.get("target_column", "PVOUT")
+        setup = dict(payload.get("model_setup") or {})
+        feature_columns = setup.get("feature_columns") or payload.get("feature_columns")
+        target_column = setup.get("target_column") or payload.get("target_column", "PVOUT")
 
         if model_type not in MODEL_TYPES:
             raise ValueError(
@@ -92,6 +92,21 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
                     "Install pandas or use `linear_regression` / `ridge_regression`."
                 )
 
+        # Workflow adapter: when an upstream baseline model checkpoint is provided,
+        # generate the predicted-PVOUT column the XGB error-correction models need.
+        baseline_model_path = payload.get("baseline_model_path")
+        if baseline_model_path and full_df is not None:
+            from .utils.baseline import load_baseline_model, predict_baseline
+
+            pred_column = setup.get("pred_column") or "PVOUT_PRED"
+            setup["pred_column"] = pred_column
+            if pred_column not in full_df.columns:
+                baseline_model = load_baseline_model(baseline_model_path)
+                full_df = full_df.copy()
+                full_df[pred_column] = predict_baseline(
+                    baseline_model, full_df[feature_columns]
+                )
+
         X_list = []
         y_list = []
         source_rows = rows if full_df is None else full_df.to_dict(orient="records")
@@ -143,7 +158,8 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
             with open(checkpoint_path, "wb") as f:
                 pickle.dump(serializable_model, f)
         else:
-            # For external model classes, persist an envelope and save full object fallback.
+            # External model classes: persist the same envelope shape the
+            # InferencePiece loader expects (`{"metadata": ..., "trained_model_object": ...}`).
             serializable_model = {
                 "model_type": model_type,
                 "feature_columns": feature_columns,
@@ -161,6 +177,9 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
 
         return OutputModel(
             message="PVOUTErrorCorrectionModelTrainPiece executed.",
+            model_path=checkpoint_path,
+            feature_columns=list(feature_columns),
+            target_column=str(target_column),
             artifacts={
                 "trained_model": serializable_model,
                 "checkpoint_path": checkpoint_path,

@@ -5,16 +5,33 @@ class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     explain: bool = Field(default=False, description="Enable explainability run.")
-    explain_method: str | None = Field(default=None, description="`lime` or `shap`.")
+    explain_method: str | None = Field(
+        default=None,
+        description="`lime` or `shap`. Defaults to `shap` when `explain=True`.",
+    )
     use_diagnostic_loss: bool = Field(
         default=False, description="Enable diagnostic heatmap artifacts."
     )
-    model: str | None = Field(
-        default=None, description="Optional model payload as JSON."
+
+    model_path: str | None = Field(
+        default=None,
+        description=(
+            "Path to a trained model checkpoint produced by an upstream trainer "
+            "(consumed from `PVOUTPredictionModelTrainPiece.model_path` or "
+            "`PVOUTErrorCorrectionModelTrainPiece.model_path`)."
+        ),
     )
-    data: str | None = Field(default=None, description="Optional data payload as JSON.")
-    x_train: str | None = Field(
-        default=None, description="Optional x_train payload as JSON."
+    data_path: str | None = Field(
+        default=None,
+        description="Path to input CSV/parquet used as the explanation dataset.",
+    )
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        description="Feature columns the model expects (from preprocessor/trainer).",
+    )
+    target_column: str | None = Field(
+        default=None,
+        description="Optional target column name (informational; not required).",
     )
 
     @model_validator(mode="before")

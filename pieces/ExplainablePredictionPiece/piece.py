@@ -16,11 +16,40 @@ class ExplainablePredictionPiece(BasePiece):
         model = payload.get("model") or payload.get("trained_model")
         data = payload.get("data") or payload.get("eval_data") or payload.get("X_y")
 
+        # Workflow adapter: load model + data from upstream piece outputs
+        # (model_path from trainer, data_path/tabular_data from preprocessor/normalizer).
+        if model is None and payload.get("model_path"):
+            from .utils.loader import load_model_object
+
+            model = load_model_object(payload)
+
+        if data is None and (
+            payload.get("data_path")
+            or payload.get("csv_path")
+            or payload.get("tabular_data")
+            or payload.get("dataframe")
+        ):
+            from .utils.loader import load_input_dataframe
+
+            df = load_input_dataframe(payload)
+            if df is not None:
+                feature_columns = payload.get("feature_columns") or []
+                if feature_columns:
+                    missing = [c for c in feature_columns if c not in df.columns]
+                    if missing:
+                        raise ValueError(
+                            f"Missing feature columns in input data: {missing}"
+                        )
+                    df = df[list(feature_columns)]
+                data = df
+
         artifacts: dict = {"input_payload": payload}
 
         if explain_enabled:
             mode = explain_cfg.get("mode") or payload.get("mode") or "regression"
-            method = (explain_method or "").lower()
+            # Default to SHAP: TreeExplainer covers the XGBoost models produced by
+            # the current minimal workflow without extra config.
+            method = (explain_method or "shap").lower()
             if method not in {"lime", "shap"}:
                 raise ValueError("explain_method must be 'lime' or 'shap'")
 
