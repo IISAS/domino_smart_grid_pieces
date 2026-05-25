@@ -44,6 +44,15 @@ class InputModel(BaseModel):
         title="Target Column",
         description="Target column name to forecast. Default `PVOUT` for solargis-style datasets.",
     )
+    data_path: str | None = Field(
+        default=None,
+        title="Data Path",
+        description=(
+            "Optional passthrough of the preprocessed data path. When wired upstream "
+            "from `DataPreprocessingPiece.Data Path`, this is echoed to downstream "
+            "pieces so the linear chain only needs one upstream edge per node."
+        ),
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -80,6 +89,10 @@ class OutputModel(BaseModel):
     target_column: str = Field(
         default="PVOUT",
         description="Echoed target column (consumable upstream → trainer.target_column).",
+    )
+    data_path: str | None = Field(
+        default=None,
+        description="Echoed preprocessed data path (consumable upstream → normalization / trainer / inference).",
     )
     decision_path: str | None = Field(
         default=None, description="Path to the on-disk decision.json artifact."

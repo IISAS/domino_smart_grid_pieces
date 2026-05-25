@@ -54,6 +54,22 @@ class OutputModel(BaseModel):
         default=None,
         description="Path to forecast CSV (consumable upstream → evaluator.pred_df_path).",
     )
+    model_path: str | None = Field(
+        default=None,
+        description="Echoed model checkpoint path (consumable upstream → ExplainablePrediction.model_path).",
+    )
+    data_path: str | None = Field(
+        default=None,
+        description="Echoed input data path (consumable upstream → ExplainablePrediction.data_path).",
+    )
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        description="Echoed feature columns (consumable upstream → ExplainablePrediction.feature_columns).",
+    )
+    target_column: str = Field(
+        default="PVOUT",
+        description="Echoed target column (consumable upstream → ExplainablePrediction.target_column).",
+    )
     artifacts: dict = Field(
         default_factory=dict,
         description=(

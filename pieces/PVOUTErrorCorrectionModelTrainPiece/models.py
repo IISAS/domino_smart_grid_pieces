@@ -61,6 +61,17 @@ class OutputModel(BaseModel):
         default="PVOUT",
         description="Target column used at training time.",
     )
+    data_path: str | None = Field(
+        default=None,
+        description="Echoed input data path (consumable upstream → inference).",
+    )
+    baseline_model_path: str | None = Field(
+        default=None,
+        description=(
+            "Echoed baseline model path (the upstream `model_path` consumed by this piece). "
+            "Forwarded so staged inference can reach both checkpoints from a single edge."
+        ),
+    )
     artifacts: dict = Field(
         default_factory=dict,
         description="Optional outputs (e.g., trained corrector URI, evaluation metrics).",

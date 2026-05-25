@@ -1,76 +1,59 @@
 # Prediction Workflow — Domino DAG Configuration
 
-End-to-end PVOUT prediction pipeline. The two grey nodes are **optional add-ons**: drop them into the canvas only when you need residual correction on top of the baseline forecast or feature-attribution artifacts for the trained model.
+End-to-end PVOUT prediction pipeline. The pipeline is a **linear chain** with a single side-branch at the very end (Evaluate and Explainable both consume Inference in parallel). PVOUTErrorCorrectionModelTrain is an **optional inline stage** between the baseline trainer and Inference — drop it in when you want a residual-correction layer, leave it out otherwise.
 
 ```
 SyntheticDataGenerator
     │
     ▼
 DataPreprocessing
-    ├──────────────────┐
-    ▼                  │
-ModelDecider           │
-    ├──────────┐       │
-    ▼          │       │
-DataNormalization      │
-    │   │              │
-    │   └─────┐        │
-    ▼        ▼         ▼
-PVOUTPredictionModelTrain ◄────┘
-    │       │       │
-    │       │       └──────────────────────┐
-    │       │                              │
-    │       └────────┐                     │
-    │                │                     │
-    │                │           PVOUTErrorCorrectionModelTrain   (optional)
-    │                │                     │       │
-    │                ▼                     ▼       │
-    │             Inference  (← Normalization, ← DataPreprocessing for features)
-    │                │                             │
-    │                │                             ▼
-    │                │                  ExplainablePrediction      (optional)
-    │                ▼
-    │            EvaluateMLModel
-    └──► (same data path used to backfill PVOUT_PRED in the correction trainer)
+    │
+    ▼
+ModelDecider
+    │
+    ▼
+DataNormalization
+    │
+    ▼
+PVOUTPredictionModelTrain
+    │
+    ▼
+[ PVOUTErrorCorrectionModelTrain ]   (optional inline stage)
+    │
+    ▼
+InferencePiece
+    │
+    ├──► EvaluateMLModel
+    │
+    └──► ExplainablePrediction        (optional, sibling of Evaluate)
 ```
 
 ![Prediction workflow](WORKFLOW.webp)
 
-**Why the fan-out:** every "consumer" piece needs an explicit edge from each "producer" piece it pulls from. Domino's Upstream dropdown only shows fields from direct parents, not transitive ancestors. See the per-piece tables below for which edges feed which field.
+**Why a linear chain works:** every piece's `OutputModel` echoes the relevant upstream context (`feature_columns`, `target_column`, `model_type`, `data_path`, and so on). Each consumer therefore needs **exactly one** upstream edge to its immediate predecessor, instead of fanning back to every original producer. The Inference → {Evaluate, Explainable} fan-out is the only branch in the graph, because Evaluate and Explainable are independent consumers of the trained model with nothing to gain from being serialized.
 
 ## DAG edges to draw
 
-### Core flow (always required)
+### Core flow
 
 | From | To | Reason |
 |---|---|---|
 | Synthetic | DataPreprocessing | dataset file |
-| DataPreprocessing | DataNormalization | data_path |
-| DataPreprocessing | PVOUTPredictionModelTrain | feature_columns |
-| DataPreprocessing | Inference | feature_columns |
-| ModelDecider | DataNormalization | normalization_type |
-| ModelDecider | PVOUTPredictionModelTrain | model_type, target_column |
-| DataNormalization | PVOUTPredictionModelTrain | data_path |
-| DataNormalization | Inference | data_path |
-| PVOUTPredictionModelTrain | Inference | model_path |
-| Inference | EvaluateMLModel | forecast_csv_path |
+| DataPreprocessing | ModelDecider | data_path, feature_columns, target_column |
+| ModelDecider | DataNormalization | normalization_type (+ echoes: data_path, feature_columns, target_column, model_type) |
+| DataNormalization | PVOUTPredictionModelTrain | data_path (+ echoes: feature_columns, target_column, model_type) |
+| PVOUTPredictionModelTrain | InferencePiece | model_path (+ echoes: data_path, feature_columns, target_column) |
+| InferencePiece | EvaluateMLModel | forecast_csv_path |
+| InferencePiece | ExplainablePrediction | model_path, data_path, feature_columns (all echoed by Inference) |
 
-### Optional: error correction add-on
+### Optional inline stage — drop in for the error-correction variant
 
 | From | To | Reason |
 |---|---|---|
-| PVOUTPredictionModelTrain | PVOUTErrorCorrectionModelTrain | baseline_model_path |
-| DataPreprocessing | PVOUTErrorCorrectionModelTrain | feature_columns, target_column |
-| DataNormalization | PVOUTErrorCorrectionModelTrain | data_path |
-| PVOUTErrorCorrectionModelTrain | Inference | model_path (replaces baseline edge for staged inference; see Inference section) |
+| PVOUTPredictionModelTrain | PVOUTErrorCorrectionModelTrain | baseline_model_path = upstream model_path (+ echoes: data_path, feature_columns, target_column) |
+| PVOUTErrorCorrectionModelTrain | InferencePiece | model_path of correction model (replaces the trainer→inference edge above; the original `baseline_model_path` is still echoed for staged inference) |
 
-### Optional: explainability add-on
-
-| From | To | Reason |
-|---|---|---|
-| PVOUTPredictionModelTrain **or** PVOUTErrorCorrectionModelTrain | ExplainablePrediction | model_path |
-| DataPreprocessing | ExplainablePrediction | feature_columns |
-| DataNormalization | ExplainablePrediction | data_path |
+That's **7 edges** for the canonical flow, **8** with the error-correction stage inserted — down from ~14–19 in the previous fan-out layout.
 
 ---
 
@@ -99,7 +82,7 @@ Produces `dataset_batch.csv` in its `results/`.
 
 **Important:** keep `keep_datetime` off. If it's on, `datetime` ends up in feature_columns and the trainer's numeric coercion will null-out every row.
 
-Produces `preprocessed.csv` and emits `Data Path`, `Feature Columns` (numeric only), `Target Column = PVOUT` as typed outputs.
+Produces `preprocessed.csv` and emits `Data Path`, `Feature Columns`, `Target Column = PVOUT` as typed outputs.
 
 ## ModelDeciderPiece
 
@@ -108,129 +91,111 @@ Produces `preprocessed.csv` and emits `Data Path`, `Feature Columns` (numeric on
 | Problem Type | `pvout_prediction` | — |
 | Horizon | `1` | — |
 | Available Models | `+` → `xgb_regressor_model` | — |
-| Feature Columns | (leave empty) | — |
-| Target Column | `PVOUT` | — |
+| Feature Columns | ← **DataPreprocessing.Feature Columns** | ✓ |
+| Target Column | ← **DataPreprocessing.Target Column** | ✓ |
+| Data Path | ← **DataPreprocessing.Data Path** | ✓ |
 
-Decider auto-picks `xgb_regressor_model` from Available Models and infers `normalization_type=none` because XGBoost doesn't need scaling. Produces `decision.json`.
+Decider auto-picks `xgb_regressor_model` from Available Models and infers `normalization_type=none` because XGBoost doesn't need scaling. Echoes `data_path`, `feature_columns`, `target_column` so DataNormalization can pick them up from a single edge.
 
 ## DataNormalizationPiece
 
 | Field | Value | Upstream |
 |---|---|---|
 | Normalization Type | ← **ModelDecider.Normalization Type** | ✓ |
+| Data Path | ← **ModelDecider.Data Path** | ✓ |
+| Feature Columns | ← **ModelDecider.Feature Columns** | ✓ |
+| Target Column | ← **ModelDecider.Target Column** | ✓ |
+| Model Type | ← **ModelDecider.Model Type** | ✓ |
 | Features | (leave empty) | — |
-| Data Path | ← **DataPreprocessing.Data Path** | ✓ |
 | Dataframe | (leave empty) | — |
 
-For XGBoost the decider sets normalization to `none` → the piece does a passthrough but still writes `normalized.csv` under its `results/` for traceability.
+For XGBoost the decider sets normalization to `none` → the piece does a passthrough but still writes `normalized.csv` under its `results/` for traceability. Re-emits `feature_columns`, `target_column`, `model_type` (echoed from upstream) plus its own `data_path` for the trainer.
 
 ## PVOUTPredictionModelTrainPiece
 
 | Field | Value | Upstream |
 |---|---|---|
-| Model Type | ← **ModelDecider.Model Type** | ✓ |
+| Model Type | ← **DataNormalization.Model Type** | ✓ |
 | Data Path | ← **DataNormalization.Data Path** | ✓ |
+| Feature Columns | ← **DataNormalization.Feature Columns** | ✓ |
+| Target Column | ← **DataNormalization.Target Column** | ✓ |
 | Csv Path | (leave empty — alias for Data Path) | — |
-| Feature Columns | ← **DataPreprocessing.Feature Columns** | ✓ |
-| Target Column | ← **ModelDecider.Target Column** | ✓ |
 | Checkpoint Dir | (leave empty — defaults to `results_path`) | — |
 
-Produces `pvout_prediction_xgb_regressor_model.pkl` and emits `Model Path` (string) as typed output for Inference (and, optionally, for the error-correction trainer / explainability piece).
+Produces `pvout_prediction_xgb_regressor_model.pkl` and emits `Model Path` plus echoed `Data Path`, `Feature Columns`, `Target Column` as typed outputs for the next piece in the chain.
 
-## PVOUTErrorCorrectionModelTrainPiece *(optional)*
+## PVOUTErrorCorrectionModelTrainPiece *(optional inline stage)*
 
-Add this node when you want a second-stage XGBoost that learns the residual of the baseline forecast. With `baseline_model_path` wired up, the piece reads the upstream checkpoint, runs it on the training data to synthesize `PVOUT_PRED`, and trains on the correction target `PVOUT − PVOUT_PRED`. No extra inference step is needed between the two trainers.
+Drop this node between the baseline trainer and Inference when you want a second-stage XGBoost trained on the residual `PVOUT − PVOUT_PRED`. With `baseline_model_path` wired up, the piece auto-generates `PVOUT_PRED` from the upstream baseline checkpoint — no extra inference step needed during training.
 
 | Field | Value | Upstream |
 |---|---|---|
 | Model Type | `error_correction_xgb_regressor_model` | — |
 | Model Params | `{"n_estimators": 100, "max_depth": 4, "verbosity": 0}` (tune as needed) | — |
-| Model Setup → Feature Columns | ← **DataPreprocessing.Feature Columns** | ✓ |
-| Model Setup → Target Column | ← **ModelDecider.Target Column** (or set to `PVOUT`) | ✓ |
-| Model Setup → Pred Column | (leave empty — defaults to `PVOUT_PRED` and is auto-filled from the baseline checkpoint) | — |
 | Baseline Model Path | ← **PVOUTPredictionModelTrain.Model Path** | ✓ |
-| Data Path | ← **DataNormalization.Data Path** | ✓ |
+| Data Path | ← **PVOUTPredictionModelTrain.Data Path** | ✓ |
+| Feature Columns | ← **PVOUTPredictionModelTrain.Feature Columns** | ✓ |
+| Target Column | ← **PVOUTPredictionModelTrain.Target Column** | ✓ |
+| Model Setup → Pred Column | (leave empty — defaults to `PVOUT_PRED`, auto-filled from the baseline checkpoint) | — |
 | Checkpoint Dir | (leave empty — defaults to `results_path`) | — |
 
-Produces `pvout_error_correction_error_correction_xgb_regressor_model.pkl` (same envelope shape as the baseline trainer — `{"metadata", "trained_model_object"}`) and emits `Model Path`, `Feature Columns`, `Target Column` as typed outputs.
+Produces `pvout_error_correction_<model_type>.pkl` (same `{"metadata", "trained_model_object"}` envelope as the baseline trainer). Emits its own `Model Path` (correction model) plus echoed `Data Path`, `Feature Columns`, `Target Column`, and `Baseline Model Path` (the upstream baseline's model_path, forwarded so InferencePiece can run staged inference from a single edge).
 
-**Other supported Model Types** (require the same numeric feature columns; only `error_correction_xgb_regressor_model` fits the strictly XGB-only minimal stack):
-
-- `error_correction_residual_meta_xgb_regressor_model` — two-stage XGBoost where a second model learns the residual of the first.
-- `error_correction_difficulty_weighted_xgb_regressor_model` — difficulty-weighted variant.
-- `linear_regression` / `ridge_regression` — closed-form fallbacks; do **not** require `Baseline Model Path` (they train a plain regression on `PVOUT`, not on a residual).
+**Other supported Model Types** — same options as before (`error_correction_residual_meta_xgb_regressor_model`, `error_correction_difficulty_weighted_xgb_regressor_model`, `linear_regression`, `ridge_regression`). Only the XGB variants need `Baseline Model Path`.
 
 ## InferencePiece
 
-The Inference node has two viable shapes depending on whether the optional error-correction trainer is in the DAG.
+Inference has two viable shapes depending on whether the error-correction stage is in the DAG. In both shapes the **single upstream edge** is the piece immediately to its left in the chain.
 
-### Shape A — baseline only (no error-correction node)
+### Shape A — baseline only (chain ends `… → Trainer → Inference`)
 
 | Field | Value | Upstream |
 |---|---|---|
 | Mode | `pvout_correction` | — |
 | Model Path | ← **PVOUTPredictionModelTrain.Model Path** | ✓ |
-| Data Path | ← **DataNormalization.Data Path** | ✓ |
-| Feature Columns | ← **DataPreprocessing.Feature Columns** | ✓ |
+| Data Path | ← **PVOUTPredictionModelTrain.Data Path** | ✓ |
+| Feature Columns | ← **PVOUTPredictionModelTrain.Feature Columns** | ✓ |
+| Target Column | ← **PVOUTPredictionModelTrain.Target Column** | ✓ |
 | Datetime Column | `datetime` | — |
 | Base Forecast Column | `PVOUT` | — |
 | Horizon Column | (leave empty — only set when `flag_each_day=true` on preprocessor) | — |
 | Max Horizon | (leave empty) | — |
 
-Produces `forecast.csv` (datetime + base_forecast + correction + final_forecast + PVOUT) and emits `Forecast Csv Path` for the evaluator.
+Produces `forecast.csv` (datetime + base_forecast + correction + final_forecast + PVOUT) and emits `Forecast Csv Path` for the evaluator, plus echoed `Model Path`, `Data Path`, `Feature Columns`, `Target Column` for ExplainablePrediction.
 
 **Semantic note about Mode:**
 - `pvout_correction` computes `final_forecast = PVOUT + model.predict(X)`. With `base_forecast_column=PVOUT`, this means `final_forecast = truth + prediction`. It runs, but `final_forecast − PVOUT` is just the model prediction, not an error.
 - `price_level` computes `final_forecast = model.predict(X)` directly with no baseline. For pure prediction semantics, switch Mode to this and leave Base Forecast Column blank.
 
-### Shape B — staged baseline + correction (with the error-correction node)
-
-When the correction trainer is in the DAG, the cleanest way to get *true* `final_forecast = baseline_pred + correction(X)` is to configure the Inference node in **staged** mode. Stage 1 runs the baseline (writes its prediction into a column), stage 2 runs the correction model with that column as the baseline.
+### Shape B — staged baseline + correction (chain ends `… → Trainer → ErrorCorrect → Inference`)
 
 | Field | Value | Upstream |
 |---|---|---|
-| Mode | (leave empty — `stages` overrides it) | — |
-| Data Path | ← **DataNormalization.Data Path** | ✓ |
-| Stages | see JSON below | — |
+| Mode | (leave empty — `Stages` overrides it) | — |
+| Model Path | ← **PVOUTErrorCorrectionModelTrain.Model Path** | ✓ |
+| Data Path | ← **PVOUTErrorCorrectionModelTrain.Data Path** | ✓ |
+| Feature Columns | ← **PVOUTErrorCorrectionModelTrain.Feature Columns** | ✓ |
+| Target Column | ← **PVOUTErrorCorrectionModelTrain.Target Column** | ✓ |
+| Stages | see JSON below — wire `model_path` of stage 1 to **PVOUTErrorCorrectionModelTrain.Baseline Model Path** | ✓ |
 
 ```json
 [
   {
     "mode": "price_level",
-    "model_path": "<PVOUTPredictionModelTrain.Model Path>",
-    "feature_columns": "<DataPreprocessing.Feature Columns>",
+    "model_path": "<PVOUTErrorCorrectionModelTrain.Baseline Model Path>",
+    "feature_columns": "<PVOUTErrorCorrectionModelTrain.Feature Columns>",
     "inject_forecast_as": "PVOUT_PRED"
   },
   {
     "mode": "pvout_correction",
     "model_path": "<PVOUTErrorCorrectionModelTrain.Model Path>",
-    "feature_columns": "<DataPreprocessing.Feature Columns>",
+    "feature_columns": "<PVOUTErrorCorrectionModelTrain.Feature Columns>",
     "base_forecast_column": "PVOUT_PRED"
   }
 ]
 ```
 
 Produces a `forecast.csv` whose `final_forecast = PVOUT_PRED + correction(X)` — the actual error-corrected forecast.
-
-## ExplainablePredictionPiece *(optional)*
-
-Add this node to produce SHAP feature-attribution artifacts for the trained model. In the strictly XGBoost minimal stack, SHAP's `TreeExplainer` is selected automatically.
-
-Point it at **either** the baseline trainer **or** the error-correction trainer (the artifacts are interpreted relative to whichever model is wired in).
-
-| Field | Value | Upstream |
-|---|---|---|
-| Explain | `true` | — |
-| Explain Method | `shap` (default when `explain=true`) | — |
-| Model Path | ← **PVOUTPredictionModelTrain.Model Path** *or* **PVOUTErrorCorrectionModelTrain.Model Path** | ✓ |
-| Data Path | ← **DataNormalization.Data Path** | ✓ |
-| Feature Columns | ← **DataPreprocessing.Feature Columns** | ✓ |
-| Target Column | ← **ModelDecider.Target Column** (informational) | ✓ |
-| Use Diagnostic Loss | unchecked unless the upstream correction trainer was built with `use_diagnostic_loss=True` | — |
-
-Produces `artifacts.explainability` (`shap_values`, `feature_names`, `base_value`, `explainer_type=TreeExplainer`). When the upstream is the diagnostic-weighted error-correction model and `Use Diagnostic Loss=true`, also produces `artifacts.diagnostic_heatmaps` with base64-encoded heatmaps over `(horizon × regime)` and `(horizon × hour)`.
-
-**Note on `explainability` config:** advanced knobs (`background_size`, `max_evals`, `num_explanations`, `instance_idx`, `lime_kwargs`, `shap_kwargs`) are passed via the `Explainability` payload field as a nested dict. For the minimal flow, defaults are fine.
 
 ## EvaluateMLModelPiece
 
@@ -239,7 +204,7 @@ Produces `artifacts.explainability` (`shap_values`, `feature_names`, `base_value
 | Evaluation Option | `normal` | — |
 | Baseline Id | `1` | — |
 | Plot | unchecked | — |
-| Forecast Column | `correction` (for `pvout_correction` Mode without staging) **or** `final_forecast` (for `price_level` Mode, or staged Shape B above) | — |
+| Forecast Column | `correction` (Shape A) **or** `final_forecast` (Shape B / `price_level` mode) | — |
 | Target Column | `PVOUT` | — |
 | Pred Df Path | ← **Inference.Forecast Csv Path** | ✓ |
 | True Baseline Df Path | (leave empty — only for `errorcorrection` mode) | — |
@@ -247,7 +212,25 @@ Produces `artifacts.explainability` (`shap_values`, `feature_names`, `base_value
 
 Produces `metrics.json` with `mae`, `rmse`, `mape`, `forecast_column`, `target_column`, `n`.
 
-**Why `correction` not `final_forecast` for Shape A (`pvout_correction` Mode with `base_forecast_column=PVOUT`):** see the Inference semantic note above. `correction` = `model.predict(X)`, so `correction − PVOUT` measures actual prediction error. For Shape B (staged), `final_forecast` is already the meaningful corrected forecast, so use it directly.
+**Why `correction` not `final_forecast` for Shape A:** see the Inference semantic note above. `correction` = `model.predict(X)`, so `correction − PVOUT` measures actual prediction error. For Shape B (staged), `final_forecast` is the meaningful corrected forecast, so use it directly.
+
+## ExplainablePredictionPiece *(optional, sibling of Evaluate)*
+
+Drop this in parallel with EvaluateMLModelPiece — both consume InferencePiece, neither feeds the other.
+
+| Field | Value | Upstream |
+|---|---|---|
+| Explain | `true` | — |
+| Explain Method | `shap` (default when `explain=true`) | — |
+| Model Path | ← **Inference.Model Path** | ✓ |
+| Data Path | ← **Inference.Data Path** | ✓ |
+| Feature Columns | ← **Inference.Feature Columns** | ✓ |
+| Target Column | ← **Inference.Target Column** (informational) | ✓ |
+| Use Diagnostic Loss | unchecked unless the upstream correction trainer was built with `use_diagnostic_loss=True` | — |
+
+Produces `artifacts.explainability` (`shap_values`, `feature_names`, `base_value`, `explainer_type=TreeExplainer`). When the upstream correction model was trained with `use_diagnostic_loss=True` and `Use Diagnostic Loss=true` is checked here, also produces `artifacts.diagnostic_heatmaps` with base64-encoded heatmaps over `(horizon × regime)` and `(horizon × hour)`.
+
+The piece transparently explains whichever model Inference used — baseline (Shape A) or correction (Shape B). No re-wiring needed when toggling the error-correction stage.
 
 ---
 
@@ -260,12 +243,11 @@ Produces `metrics.json` with `mae`, `rmse`, `mape`, `forecast_column`, `target_c
   docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group2
   ```
 - Domino piece repository refreshed to the latest `dev-3` release so the DAG points at current images and exposes the latest typed fields.
-- All edges from the table above are drawn on the canvas.
+- The chain has exactly one edge between consecutive pieces. The only fan-out is Inference → {Evaluate, Explainable}.
 - ModelDecider's Available Models contains `xgb_regressor_model`.
 - DataPreprocessing's Keep Datetime is off.
-- **If using the error-correction add-on:** Baseline Model Path on the correction trainer is wired to the baseline trainer's Model Path, and `feature_columns` is identical for both trainers (the baseline runs `.predict(df[feature_columns])` internally to backfill `PVOUT_PRED`).
-- **If using staged inference (Shape B):** the `stages` JSON points stage 1 at the baseline checkpoint and stage 2 at the correction checkpoint, with `inject_forecast_as` matching `base_forecast_column` between stages.
-- **If using the explainability add-on:** `Model Path` resolves to a `.pkl` produced by one of the trainers (the loader unwraps the `{"metadata", "trained_model_object"}` envelope automatically).
+- **If using the error-correction stage:** Baseline Model Path on the correction trainer is wired to the baseline trainer's Model Path, and the inference node receives its single edge from the correction trainer (not from the baseline trainer).
+- **If using staged inference (Shape B):** the `stages` JSON references both checkpoints, with `model_path` of stage 1 = `Baseline Model Path` echoed forward by the correction trainer.
 
 ## Files dropped into each piece's `results/`
 
@@ -278,7 +260,7 @@ Produces `metrics.json` with `mae`, `rmse`, `mape`, `forecast_column`, `target_c
 | PVOUTPredictionModelTrain | `pvout_prediction_<model_type>.pkl` | trained baseline model checkpoint |
 | PVOUTErrorCorrectionModelTrain *(optional)* | `pvout_error_correction_<model_type>.pkl` | trained correction model checkpoint |
 | Inference | `forecast.csv` | datetime + base_forecast + correction + final_forecast + PVOUT |
-| ExplainablePrediction *(optional)* | (artifacts only, no on-disk file by default) | SHAP `shap_values` + `feature_names` (+ optional diagnostic heatmaps as base64 PNGs in artifacts) |
 | EvaluateMLModel | `metrics.json` | MAE / RMSE / MAPE |
+| ExplainablePrediction *(optional)* | (artifacts only, no on-disk file by default) | SHAP `shap_values` + `feature_names` (+ optional diagnostic heatmaps as base64 PNGs in artifacts) |
 
 All these land on the host through Domino's `results_path` mount — no Docker exec needed to inspect them.

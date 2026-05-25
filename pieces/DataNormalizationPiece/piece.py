@@ -110,6 +110,11 @@ class DataNormalizationPiece(BasePiece):
         if isinstance(features, str):
             features = [features]
 
+        # Passthrough echoes — forwarded as-is for the linear-chain wiring.
+        echo_feature_columns = list(payload.get("feature_columns") or [])
+        echo_target_column = str(payload.get("target_column") or "PVOUT")
+        echo_model_type = str(payload.get("model_type") or "xgb_regressor_model")
+
         # Load from CSV path if no inline dataframe was provided.
         if df is None and data_path:
             import pandas as pd  # type: ignore
@@ -120,6 +125,9 @@ class DataNormalizationPiece(BasePiece):
             self.logger.info("No dataframe provided; skipping normalization.")
             return OutputModel(
                 message="No dataframe provided; skipping normalization.",
+                feature_columns=echo_feature_columns,
+                target_column=echo_target_column,
+                model_type=echo_model_type,
                 artifacts={"input_payload": payload},
             )
 
@@ -142,6 +150,9 @@ class DataNormalizationPiece(BasePiece):
                 data_path=saved_path,
                 normalization_type="none",
                 features=applied_features,
+                feature_columns=echo_feature_columns,
+                target_column=echo_target_column,
+                model_type=echo_model_type,
                 artifacts=artifacts,
             )
 
@@ -171,6 +182,9 @@ class DataNormalizationPiece(BasePiece):
             data_path=saved_path,
             normalization_type=str(normalization_type),
             features=list(applied_features),
+            feature_columns=echo_feature_columns,
+            target_column=echo_target_column,
+            model_type=echo_model_type,
             artifacts=artifacts,
         )
 

@@ -51,6 +51,10 @@ class OutputModel(BaseModel):
         default="PVOUT",
         description="Target column used at training time.",
     )
+    data_path: str | None = Field(
+        default=None,
+        description="Echoed input data path (consumable upstream → error-correction trainer / inference).",
+    )
     artifacts: dict = Field(
         default_factory=dict,
         description="Optional outputs (e.g., trained model URI, training metrics).",

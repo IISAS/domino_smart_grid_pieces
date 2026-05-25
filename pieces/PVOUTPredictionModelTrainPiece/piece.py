@@ -94,6 +94,7 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
             model_path=artifacts.get("checkpoint_path"),
             feature_columns=list(feature_columns),
             target_column=str(target_column),
+            data_path=payload.get("data_path") or payload.get("csv_path"),
             artifacts=artifacts,
         )
 

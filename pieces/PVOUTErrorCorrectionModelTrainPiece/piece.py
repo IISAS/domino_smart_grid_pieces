@@ -36,6 +36,14 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
         if not feature_columns:
             raise ValueError("`payload['model_setup']['feature_columns']` is required.")
 
+        # Normalize: train_model() consumes feature_columns / target_column from
+        # `setup`, so propagate the resolved values back in case they were sourced
+        # from the top-level payload fields (e.g. typed UI bindings from upstream
+        # pieces). Without this the XGB error-correction models receive an empty
+        # feature list and xgboost raises "0 feature is supplied".
+        setup["feature_columns"] = list(feature_columns)
+        setup["target_column"] = str(target_column)
+
         def _load_rows_from_csv(path: str) -> list[dict]:
             with open(path, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
@@ -180,6 +188,8 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
             model_path=checkpoint_path,
             feature_columns=list(feature_columns),
             target_column=str(target_column),
+            data_path=payload.get("data_path") or payload.get("csv_path"),
+            baseline_model_path=baseline_model_path,
             artifacts={
                 "trained_model": serializable_model,
                 "checkpoint_path": checkpoint_path,

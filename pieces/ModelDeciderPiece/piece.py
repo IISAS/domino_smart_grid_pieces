@@ -33,6 +33,7 @@ class ModelDeciderPiece(BasePiece):
             "normalization_type": normalization_type,
             "feature_columns": payload.get("feature_columns"),
             "target_column": payload.get("target_column", "PVOUT"),
+            "data_path": payload.get("data_path"),
             "problem_type": payload.get("problem_type"),
             "horizon": payload.get("horizon"),
         }
@@ -52,6 +53,7 @@ class ModelDeciderPiece(BasePiece):
             normalization_type=normalization_type,
             feature_columns=list(decision.get("feature_columns") or []),
             target_column=str(decision.get("target_column") or "PVOUT"),
+            data_path=decision.get("data_path"),
             decision_path=decision_path,
             artifacts=artifacts,
         )

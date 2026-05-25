@@ -22,11 +22,23 @@ class InferencePiece(BasePiece):
                 Path(self.results_path) / "forecast.csv"
             )
 
+        # Passthrough echoes — forwarded as-is so ExplainablePrediction can connect
+        # to Inference with a single upstream edge instead of fanning back to the
+        # trainer / preprocessor / normalizer.
+        echo_model_path = payload.get("model_path")
+        echo_data_path = payload.get("data_path")
+        echo_feature_columns = list(payload.get("feature_columns") or [])
+        echo_target_column = str(payload.get("target_column") or "PVOUT")
+
         if payload.get("stages"):
             artifacts = run_staged_inference(payload)
         elif not payload.get("mode"):
             return OutputModel(
                 message="InferencePiece executed (no-op).",
+                model_path=echo_model_path,
+                data_path=echo_data_path,
+                feature_columns=echo_feature_columns,
+                target_column=echo_target_column,
                 artifacts={"input_payload": payload},
             )
         else:
@@ -39,5 +51,9 @@ class InferencePiece(BasePiece):
         return OutputModel(
             message="InferencePiece executed.",
             forecast_csv_path=csv_path,
+            model_path=echo_model_path,
+            data_path=echo_data_path,
+            feature_columns=echo_feature_columns,
+            target_column=echo_target_column,
             artifacts=artifacts,
         )
