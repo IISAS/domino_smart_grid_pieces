@@ -82,6 +82,40 @@
                     "default": null,
                     "description": "Optional inline dataframe payload (JSON object). Leave empty when `Data Path` is provided.",
                     "title": "Dataframe"
+                },
+                "feature_columns": {
+                    "description": "Optional passthrough of feature columns from upstream. Echoed to downstream pieces so trainer/inference need only one upstream edge.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional passthrough of the target column from upstream. Echoed downstream.",
+                    "title": "Target Column"
+                },
+                "model_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional passthrough of the selected model type from upstream. Echoed downstream.",
+                    "title": "Model Type"
                 }
             },
             "title": "InputModel",
@@ -120,6 +154,26 @@
                     },
                     "title": "Features",
                     "type": "array"
+                },
+                "feature_columns": {
+                    "description": "Echoed feature columns from upstream (consumable upstream \u2192 trainer / inference).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Echoed target column from upstream (consumable upstream \u2192 trainer.target_column).",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "model_type": {
+                    "default": "xgb_regressor_model",
+                    "description": "Echoed selected model type from upstream (consumable upstream \u2192 trainer.model_type).",
+                    "title": "Model Type",
+                    "type": "string"
                 },
                 "artifacts": {
                     "description": "Optional outputs (e.g., normalized dataset URI, fitted scaler params).",
@@ -440,6 +494,19 @@
                     "title": "Target Column",
                     "type": "string"
                 },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed input data path (consumable upstream \u2192 error-correction trainer / inference).",
+                    "title": "Data Path"
+                },
                 "artifacts": {
                     "description": "Optional outputs (e.g., trained model URI, training metrics).",
                     "title": "Artifacts",
@@ -546,6 +613,19 @@
                     "default": "PVOUT",
                     "description": "Target column name to forecast. Default `PVOUT` for solargis-style datasets.",
                     "title": "Target Column"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional passthrough of the preprocessed data path. When wired upstream from `DataPreprocessingPiece.Data Path`, this is echoed to downstream pieces so the linear chain only needs one upstream edge per node.",
+                    "title": "Data Path"
                 }
             },
             "title": "InputModel",
@@ -583,6 +663,19 @@
                     "description": "Echoed target column (consumable upstream \u2192 trainer.target_column).",
                     "title": "Target Column",
                     "type": "string"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed preprocessed data path (consumable upstream \u2192 normalization / trainer / inference).",
+                    "title": "Data Path"
                 },
                 "decision_path": {
                     "anyOf": [
@@ -930,6 +1023,46 @@
                     "description": "Path to forecast CSV (consumable upstream \u2192 evaluator.pred_df_path).",
                     "title": "Forecast Csv Path"
                 },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed model checkpoint path (consumable upstream \u2192 ExplainablePrediction.model_path).",
+                    "title": "Model Path"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed input data path (consumable upstream \u2192 ExplainablePrediction.data_path).",
+                    "title": "Data Path"
+                },
+                "feature_columns": {
+                    "description": "Echoed feature columns (consumable upstream \u2192 ExplainablePrediction.feature_columns).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Echoed target column (consumable upstream \u2192 ExplainablePrediction.target_column).",
+                    "title": "Target Column",
+                    "type": "string"
+                },
                 "artifacts": {
                     "description": "No-op: `input_payload`. Run: `forecast` (inline_records, csv_path, columns), `per_horizon`, `metadata`, optional `debug`. Pipeline: additionally `stage_summaries`.",
                     "title": "Artifacts",
@@ -1263,6 +1396,32 @@
                     "description": "Target column used at training time.",
                     "title": "Target Column",
                     "type": "string"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed input data path (consumable upstream \u2192 inference).",
+                    "title": "Data Path"
+                },
+                "baseline_model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed baseline model path (the upstream `model_path` consumed by this piece). Forwarded so staged inference can reach both checkpoints from a single edge.",
+                    "title": "Baseline Model Path"
                 },
                 "artifacts": {
                     "description": "Optional outputs (e.g., trained corrector URI, evaluation metrics).",
