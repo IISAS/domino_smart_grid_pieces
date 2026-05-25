@@ -97,14 +97,18 @@ def preprocess_prediction(payload):
                 candidate = pd.read_csv(path, **kwargs)
             except Exception:
                 continue
-            if "datetime" in candidate.columns or (
-                "Date" in candidate.columns and "Time" in candidate.columns
+            if (
+                "datetime" in candidate.columns
+                or ("Date" in candidate.columns and "Time" in candidate.columns)
+                or "timestamp_utc" in candidate.columns
             ):
                 return candidate
         raise ValueError(
             "Unable to read input CSV with supported schemas. "
-            "Expected either `datetime` or `Date`+`Time` columns."
+            "Expected a `datetime`, `timestamp_utc`, or `Date`+`Time` column."
         )
+
+    target_col = str(payload.get("target_column", "PVOUT"))
 
     if df is None:
         if not data_path:
@@ -119,18 +123,29 @@ def preprocess_prediction(payload):
     if flag_each_day_enabled:
         data = flag_each_day(data)
 
-    data = preprocess_solargis_data(data)
+    # SolarGIS-specific preprocessing only when the dataset has the expected columns.
+    if all(col in data.columns for col in ("GHI", "DIF", "SE")):
+        data = preprocess_solargis_data(data)
+    else:
+        data = data.dropna()
 
     if save_data_path:
         os.makedirs(os.path.dirname(save_data_path), exist_ok=True)
         data.to_csv(save_data_path, index=False)
 
-    features = _resolve_features(payload, data, target_columns=["PVOUT"])
+    if target_col not in data.columns:
+        raise ValueError(
+            f"Target column `{target_col}` not found in data. "
+            f"Available columns: {list(data.columns)}. "
+            "Pass `target_column` in piece input to match your dataset."
+        )
+
+    features = _resolve_features(payload, data, target_columns=[target_col])
     if keep_datetime and "datetime" in data.columns and "datetime" not in features:
         features = ["datetime"] + features
 
     X = data[features]
-    y = data["PVOUT"]
+    y = data[target_col]
 
     return {
         "message": "DataPreprocessingPiece executed (prediction).",
@@ -138,6 +153,7 @@ def preprocess_prediction(payload):
             "X": to_jsonable_df(X),
             "y": to_jsonable_df(y.to_frame()),
             "features": features,
+            "target_column": target_col,
         },
     }
 

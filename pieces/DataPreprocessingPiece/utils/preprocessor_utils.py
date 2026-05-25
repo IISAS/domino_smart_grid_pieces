@@ -46,6 +46,7 @@ def ensure_datetime_column(data):
     Supported schemas:
     - existing `datetime` column
     - separate `Date` + `Time` columns
+    - `timestamp_utc` column (OKTE and similar datasets)
     """
     import pandas as pd  # type: ignore
 
@@ -64,7 +65,12 @@ def ensure_datetime_column(data):
         )
         return data
 
+    if "timestamp_utc" in data.columns:
+        data = data.copy()
+        data["datetime"] = pd.to_datetime(data["timestamp_utc"], errors="coerce")
+        return data
+
     raise ValueError(
-        "Input data must contain either a `datetime` column or both `Date` and `Time` columns. "
+        "Input data must contain a `datetime`, `timestamp_utc`, or both `Date` and `Time` columns. "
         f"Found columns: {list(data.columns)}"
     )

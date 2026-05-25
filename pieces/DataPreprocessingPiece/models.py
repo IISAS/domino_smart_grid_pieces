@@ -16,6 +16,11 @@ class InputModel(BaseModel):
     keep_datetime: bool | None = Field(
         default=None, description="Keep datetime column if supported."
     )
+    target_column: str | None = Field(
+        default=None,
+        description="Target column for prediction mode. Defaults to `PVOUT` (SolarGIS). "
+        "Set to e.g. `spot_price_eur_mwh` for OKTE data.",
+    )
 
     @model_validator(mode="before")
     @classmethod
