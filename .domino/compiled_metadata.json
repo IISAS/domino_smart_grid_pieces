@@ -1102,6 +1102,318 @@
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/TestGpuSupprtPiece"
     },
+    "PVOUTErrorCorrectionModelTrainPiece": {
+        "name": "PVOUTErrorCorrectionModelTrainPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_1.txt"
+        },
+        "tags": [
+            "Template",
+            "Train",
+            "PVOUT",
+            "ErrorCorrection"
+        ],
+        "style": {
+            "node_label": "Train PVOUT Error Correction Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:sliders",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for training a PVOUT error-correction model.",
+        "container_resources": {
+            "requests": {
+                "cpu": 200,
+                "memory": 256
+            },
+            "limits": {
+                "cpu": 1000,
+                "memory": 2048
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "model_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Training model type.",
+                    "title": "Model Type"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Input CSV path.",
+                    "title": "Data Path"
+                },
+                "csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Alias for input CSV path.",
+                    "title": "Csv Path"
+                },
+                "baseline_model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional path to an upstream baseline model checkpoint (e.g. `PVOUTPredictionModelTrainPiece.model_path`). When set, the baseline is used to generate the predicted-PVOUT column required by the XGB error-correction models, removing the need for an explicit inference step between the trainer and this piece.",
+                    "title": "Baseline Model Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns used for training (also for baseline inference).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Target column name (defaults to `PVOUT`).",
+                    "title": "Target Column"
+                },
+                "checkpoint_dir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional checkpoint directory.",
+                    "title": "Checkpoint Dir"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to trained correction model checkpoint (consumable upstream \u2192 inference.model_path).",
+                    "title": "Model Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns used at training time (consumable upstream \u2192 inference.feature_columns).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Target column used at training time.",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., trained corrector URI, evaluation metrics).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTErrorCorrectionModelTrainPiece"
+    },
+    "ExplainablePredictionPiece": {
+        "name": "ExplainablePredictionPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Explainability"
+        ],
+        "style": {
+            "node_label": "Explainable Prediction",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:magnifying-glass-chart",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for generating prediction explanations (e.g., feature attributions) alongside inference results.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 1024
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "explain": {
+                    "default": false,
+                    "description": "Enable explainability run.",
+                    "title": "Explain",
+                    "type": "boolean"
+                },
+                "explain_method": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "`lime` or `shap`. Defaults to `shap` when `explain=True`.",
+                    "title": "Explain Method"
+                },
+                "use_diagnostic_loss": {
+                    "default": false,
+                    "description": "Enable diagnostic heatmap artifacts.",
+                    "title": "Use Diagnostic Loss",
+                    "type": "boolean"
+                },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to a trained model checkpoint produced by an upstream trainer (consumed from `PVOUTPredictionModelTrainPiece.model_path` or `PVOUTErrorCorrectionModelTrainPiece.model_path`).",
+                    "title": "Model Path"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to input CSV/parquet used as the explanation dataset.",
+                    "title": "Data Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns the model expects (from preprocessor/trainer).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional target column name (informational; not required).",
+                    "title": "Target Column"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., explanation report URI, attribution arrays).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ExplainablePredictionPiece"
+    },
     "SyntheticDataGeneratorPiece": {
         "name": "SyntheticDataGeneratorPiece",
         "dependency": {
