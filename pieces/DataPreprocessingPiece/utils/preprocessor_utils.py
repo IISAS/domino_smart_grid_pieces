@@ -71,6 +71,7 @@ def ensure_datetime_column(data):
         return data
 
     raise ValueError(
-        "Input data must contain a `datetime`, `timestamp_utc`, or both `Date` and `Time` columns. "
+        "Input data must contain either a `datetime` column, a `timestamp_utc` column, "
+        "or both `Date` and `Time` columns. "
         f"Found columns: {list(data.columns)}"
     )
