@@ -102,12 +102,12 @@ Decider auto-picks `xgb_regressor_model` from Available Models and infers `norma
 | Field | Value | Upstream |
 |---|---|---|
 | Normalization Type | ← **ModelDecider.Normalization Type** | ✓ |
+| Features | (leave empty) | — |
 | Data Path | ← **ModelDecider.Data Path** | ✓ |
+| Dataframe | (leave empty) | — |
 | Feature Columns | ← **ModelDecider.Feature Columns** | ✓ |
 | Target Column | ← **ModelDecider.Target Column** | ✓ |
 | Model Type | ← **ModelDecider.Model Type** | ✓ |
-| Features | (leave empty) | — |
-| Dataframe | (leave empty) | — |
 
 For XGBoost the decider sets normalization to `none` → the piece does a passthrough but still writes `normalized.csv` under its `results/` for traceability. Re-emits `feature_columns`, `target_column`, `model_type` (echoed from upstream) plus its own `data_path` for the trainer.
 
@@ -117,9 +117,9 @@ For XGBoost the decider sets normalization to `none` → the piece does a passth
 |---|---|---|
 | Model Type | ← **DataNormalization.Model Type** | ✓ |
 | Data Path | ← **DataNormalization.Data Path** | ✓ |
+| Csv Path | (leave empty — alias for Data Path) | — |
 | Feature Columns | ← **DataNormalization.Feature Columns** | ✓ |
 | Target Column | ← **DataNormalization.Target Column** | ✓ |
-| Csv Path | (leave empty — alias for Data Path) | — |
 | Checkpoint Dir | (leave empty — defaults to `results_path`) | — |
 
 Produces `pvout_prediction_xgb_regressor_model.pkl` and emits `Model Path` plus echoed `Data Path`, `Feature Columns`, `Target Column` as typed outputs for the next piece in the chain.
@@ -131,9 +131,8 @@ Drop this node between the baseline trainer and Inference when you want a second
 | Field | Value | Upstream |
 |---|---|---|
 | Model Type | `error_correction_xgb_regressor_model` | — |
-| Model Params | `{"n_estimators": 100, "max_depth": 4, "verbosity": 0}` (tune as needed) | — |
-| Baseline Model Path | ← **PVOUTPredictionModelTrain.Model Path** | ✓ |
 | Data Path | ← **PVOUTPredictionModelTrain.Data Path** | ✓ |
+| Baseline Model Path | ← **PVOUTPredictionModelTrain.Model Path** | ✓ |
 | Feature Columns | ← **PVOUTPredictionModelTrain.Feature Columns** | ✓ |
 | Target Column | ← **PVOUTPredictionModelTrain.Target Column** | ✓ |
 | Model Setup → Pred Column | (leave empty — defaults to `PVOUT_PRED`, auto-filled from the baseline checkpoint) | — |
