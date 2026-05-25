@@ -1087,6 +1087,137 @@
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
     },
+    "OKTEDataGeneratorPiece": {
+        "name": "OKTEDataGeneratorPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "OKTE",
+            "SyntheticData",
+            "Generator",
+            "ElectricityMarket"
+        ],
+        "style": {
+            "node_label": "OKTE Data Generator",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:bolt",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Generate synthetic OKTE electricity market data (spot price, imbalance, scheduled and actual generation) in batch or realtime-like mode.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "records_count": {
+                    "default": 20,
+                    "description": "Number of records to generate.",
+                    "title": "Records Count",
+                    "type": "integer"
+                },
+                "time_step_minutes": {
+                    "default": 15,
+                    "description": "Time step between generated records in minutes.",
+                    "title": "Time Step Minutes",
+                    "type": "integer"
+                },
+                "output_mode": {
+                    "default": "batch_sample",
+                    "description": "One of: `batch_sample`, `realtime_stream`.",
+                    "title": "Output Mode",
+                    "type": "string"
+                },
+                "output_format": {
+                    "default": "csv",
+                    "description": "One of: `json`, `csv`.",
+                    "title": "Output Format",
+                    "type": "string"
+                },
+                "interval_ms": {
+                    "default": 1000,
+                    "description": "Realtime interval hint in milliseconds (only used in realtime_stream mode).",
+                    "title": "Interval Ms",
+                    "type": "integer"
+                },
+                "start_at": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional start datetime in ISO format. Defaults to current UTC time.",
+                    "title": "Start At"
+                },
+                "seed": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional random seed for reproducible output.",
+                    "title": "Seed"
+                },
+                "timezone_offset_hours": {
+                    "default": 1.0,
+                    "description": "Timezone offset in hours applied to Date/Time columns (CET = 1.0).",
+                    "title": "Timezone Offset Hours",
+                    "type": "number"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "file_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Dataset file path"
+                },
+                "target_column": {
+                    "default": "spot_price_eur_mwh",
+                    "description": "Suggested target column for downstream preprocessing/training pieces.",
+                    "title": "Target column",
+                    "type": "string"
+                }
+            },
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/OKTEDataGeneratorPiece"
+    },
     "SyntheticDataGeneratorPiece": {
         "name": "SyntheticDataGeneratorPiece",
         "dependency": {
