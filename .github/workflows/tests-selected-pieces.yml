@@ -10,10 +10,12 @@ on:
   push:
     branches:
       - dev
+      - dev3
   pull_request:
     branches:
       - main
       - dev
+      - dev3
     paths:
       - "pieces/**"
       - "requirements-tests.txt"

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - dev3
     paths:
       - "config.toml"
       - "pieces/**"
@@ -26,7 +27,16 @@ jobs:
 
       - name: Compute image tag prefix
         shell: bash
-        run: echo "TAG_PREFIX=development" >> "$GITHUB_ENV"
+        run: |
+          set -euo pipefail
+          BRANCH="${{ github.ref_name }}"
+          if [[ "$BRANCH" == "dev3" ]]; then
+            TAG_PREFIX="dev-3"
+          else
+            TAG_PREFIX="development"
+          fi
+          echo "TAG_PREFIX=$TAG_PREFIX" >> "$GITHUB_ENV"
+          echo "Using image tag prefix: $TAG_PREFIX"
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
