@@ -105,7 +105,7 @@ class DataNormalizationPiece(BasePiece):
         df = payload.get("dataframe") or payload.get("X") or payload.get("data")
         data_path = payload.get("data_path")
         normalization_type = payload.get("type") or payload.get("normalization_type")
-        features = payload.get("features")
+        features = payload.get("feature_columns") or payload.get("features")
 
         if isinstance(features, str):
             features = [features]

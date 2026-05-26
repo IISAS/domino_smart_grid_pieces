@@ -21,6 +21,14 @@ class InputModel(BaseModel):
             "Click `+` and add column names like `GHI`, `TEMP`, `WS`."
         ),
     )
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        title="Feature Columns",
+        description=(
+            "Alias for `features`. Wire upstream from `ModelDeciderPiece.Feature Columns` or "
+            "`DataPreprocessingPiece.Feature Columns`. Takes precedence over `features` when both are set."
+        ),
+    )
     data_path: str | None = Field(
         default=None,
         title="Data Path",
