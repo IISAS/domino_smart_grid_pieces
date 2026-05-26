@@ -7,6 +7,14 @@ class InputModel(BaseModel):
     data_path: str | None = Field(default=None, description="Input CSV path.")
     csv_path: str | None = Field(default=None, description="Alias for input CSV path.")
     output_dir: str | None = Field(default=None, description="Output directory.")
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        description="Feature columns used for training (consumed from preprocessor/decider).",
+    )
+    target_column: str | None = Field(
+        default=None,
+        description="Target column name (defaults to `PVOUT`).",
+    )
     model_filename: str | None = Field(
         default=None, description="Model output filename."
     )

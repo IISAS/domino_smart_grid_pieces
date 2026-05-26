@@ -412,7 +412,7 @@ class ElectricityPricePredictionModelTrainPiece(BasePiece):
 
         setup = payload.get("model_setup") or {}
 
-        feature_columns = setup.get("feature_columns")
+        feature_columns = setup.get("feature_columns") or payload.get("feature_columns")
 
         if not feature_columns or not isinstance(feature_columns, list):
 
@@ -422,7 +422,9 @@ class ElectricityPricePredictionModelTrainPiece(BasePiece):
 
         feature_columns = [str(c) for c in feature_columns]
 
-        target_column = str(setup.get("target_column", "price_eur_mwh"))
+        target_column = str(
+            setup.get("target_column") or payload.get("target_column") or "price_eur_mwh"
+        )
 
         datetime_column = str(setup.get("datetime_column", "datetime"))
 
