@@ -1,9 +1,44 @@
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
-class InputModel(BaseModel):
-    model_config = ConfigDict(extra="allow")
+class ExplainSpec(BaseModel):
+    """One trained model's explanation request."""
 
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    model_id: str | None = Field(
+        default=None,
+        description="Stable identifier (used in per-model artifacts). "
+        "Falls back to `model_path` basename / a generated index.",
+    )
+    explain: bool | None = Field(default=None, description="Enable explainability run.")
+    explain_method: str | None = Field(
+        default=None, description="`lime` or `shap`."
+    )
+    use_diagnostic_loss: bool | None = Field(
+        default=None, description="Enable diagnostic heatmap artifacts."
+    )
+    model_path: str | None = Field(default=None, description="Model checkpoint path.")
+    data_path: str | None = Field(default=None, description="Explanation dataset path.")
+    feature_columns: list[str] | None = Field(
+        default=None, description="Feature columns expected by the model."
+    )
+    target_column: str | None = Field(
+        default=None, description="Optional target column name."
+    )
+
+
+class InputModel(BaseModel):
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    explanations: list[ExplainSpec] | None = Field(
+        default=None,
+        description=(
+            "Array of explanation requests to process in one piece run. Each entry "
+            "produces its own per-model artifacts. When omitted, the scalar fields "
+            "below are used as a single-entry fallback for backward compatibility."
+        ),
+    )
     explain: bool = Field(default=False, description="Enable explainability run.")
     explain_method: str | None = Field(
         default=None,
@@ -53,8 +88,13 @@ class InputModel(BaseModel):
 
 
 class OutputModel(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     message: str = Field(description="Human-readable status message.")
     artifacts: dict = Field(
         default_factory=dict,
-        description="Optional outputs (e.g., explanation report URI, attribution arrays).",
+        description=(
+            "`input_payload` on no-op. On run: aggregated `per_model = {model_id: {...}}` "
+            "plus first-entry top-level keys for back-compat."
+        ),
     )
