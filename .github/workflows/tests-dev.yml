@@ -15,6 +15,13 @@ on:
       - ".github/workflows/tests-dev.yml"
   workflow_dispatch:
 
+# Serialize per branch so two pushes on the same ref cannot race the
+# final `auto-organize` write-back step (the prior failure mode where the
+# second run hit `! [rejected] HEAD -> dev3 (fetch first)`).
+concurrency:
+  group: tests-dev-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   run-tests-dev:
     runs-on: ubuntu-latest
@@ -149,10 +156,53 @@ jobs:
           fi
 
       - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          push_succeeded=0
+          if [[ "$(git rev-parse HEAD)" == "${{ github.sha }}" ]]; then
+            echo "No auto-organize commit to push."
+            push_succeeded=1
+          fi
+
+          # Belt-and-braces against a residual race: concurrency above already
+          # serializes per branch, but in the rare overlap (e.g. push event +
+          # workflow_dispatch starting concurrently) rebase on top of the new
+          # remote tip and retry.
+          if [[ "$push_succeeded" -eq 0 ]]; then
+            for attempt in 1 2 3 4 5; do
+              if git push "$REMOTE_URL" "HEAD:$BRANCH"; then
+                echo "Push succeeded on attempt $attempt."
+                push_succeeded=1
+                break
+              fi
+              echo "Push attempt $attempt rejected; rebasing on remote $BRANCH and retrying..."
+              git fetch "$REMOTE_URL" "$BRANCH"
+              # --empty=drop: if the other run already pushed an identical
+              # auto-organize commit, our patch becomes empty and we just
+              # fast-forward to the remote tip (push then becomes a no-op).
+              git rebase --empty=drop FETCH_HEAD || {
+                echo "Rebase failed; aborting and bailing out."
+                git rebase --abort || true
+                exit 1
+              }
+              sleep $((attempt * 5))
+            done
+          fi
+
+          if [[ "$push_succeeded" -ne 1 ]]; then
+            echo "Push failed after retries."
+            exit 1
+          fi
+
+          # Always anchor the release to the SHA that is actually on the remote
+          # ref now (rebase may have changed local HEAD, e.g. when our
+          # auto-organize was dropped as empty).
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Create Release
         env:
