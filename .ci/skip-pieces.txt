@@ -5,7 +5,7 @@
 # DataPreprocessingPiece
 
 # DataNormalizationPiece
-ElectricityPricePredictionModelTrainPiece
+# ElectricityPricePredictionModelTrainPiece
 # EvaluateMLModelPiece
 # ForecastAggregatorPiece
 # ExplainablePredictionPiece
