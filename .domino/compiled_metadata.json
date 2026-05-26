@@ -113,6 +113,46 @@
                     "title": "Message",
                     "type": "string"
                 },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to saved model file (consumable upstream \u2192 inference.model_path).",
+                    "title": "Model Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns used at training time (consumable upstream \u2192 inference.feature_columns).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "price_eur_mwh",
+                    "description": "Target column used at training time.",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "preprocessing_metadata_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to preprocessing_metadata.json (consumable upstream \u2192 inference.preprocessing_metadata_path).",
+                    "title": "Preprocessing Metadata Path"
+                },
                 "artifacts": {
                     "description": "Training outputs: `model_path`, `preprocessing_metadata_path`, `train_metrics`, `train_rows`, `fallback_used`; optional `enriched_csv_path`.",
                     "title": "Artifacts",
