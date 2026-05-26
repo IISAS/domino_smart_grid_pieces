@@ -1,63 +1,95 @@
 # Prediction Workflow — Domino DAG Configuration
 
-End-to-end PVOUT prediction pipeline. The pipeline is a **linear chain** with a single side-branch at the very end (Evaluate and Explainable both consume Inference in parallel). PVOUTErrorCorrectionModelTrain is an **optional inline stage** between the baseline trainer and Inference — drop it in when you want a residual-correction layer, leave it out otherwise.
+End-to-end forecasting pipeline with **two parallel targets** — PVOUT (solar power from Solargis-style data) and electricity spot price (from OKTE-style market data). Both data generators feed a **single DataPreprocessing node** that inner-joins them on `datetime` into one merged dataset. The fork happens **after** DataPreprocessing: each branch has its own `ModelDecider → DataNormalization → Trainer` triple (because normalization choice depends on the model chosen per target). Both trainers V-merge into one Inference node, which fans out to Evaluate / Explainable / ForecastAggregator as siblings. PVOUTErrorCorrectionModelTrain is an **optional inline stage** on the PVOUT branch only.
 
 ```
-SyntheticDataGenerator
-    │
-    ▼
-DataPreprocessing
-    │
-    ▼
-ModelDecider
-    │
-    ▼
-DataNormalization
-    │
-    ▼
-PVOUTPredictionModelTrain
-    │
-    ▼
-[ PVOUTErrorCorrectionModelTrain ]   (optional inline stage)
-    │
-    ▼
-InferencePiece
-    │
-    ├──► EvaluateMLModel
-    │
-    └──► ExplainablePrediction        (optional, sibling of Evaluate)
+SyntheticDataGenerator ─┐
+                         ▼
+                   DataPreprocessing  (inner-join Solargis + OKTE on datetime → one merged CSV)
+                         ▲
+OKTEDataGenerator ───────┘
+                         │
+            ┌────────────┴────────────┐
+            ▼                         ▼
+     ModelDecider_PVOUT        ModelDecider_Price
+            │                         │
+            ▼                         ▼
+     DataNormalization_PVOUT   DataNormalization_Price
+            │                         │
+            ▼                         ▼
+     PVOUTPredictionModelTrain  ElectricityPricePredictionModelTrain
+            │                         │
+            ▼                         │
+   [ PVOUTErrorCorrectionModelTrain ] │   (optional inline)
+            │                         │
+            └────────────┬────────────┘
+                         ▼
+                  InferencePiece  (models = [pvout_entry, price_entry, …])
+                         │
+            ┌────────────┼────────────┐
+            ▼            ▼            ▼
+         Evaluate   Explainable   ForecastAggregator
+        (evaluations[]) (explanations[]) (forecasts[])
 ```
+
+> The DAG forks at DataPreprocessing into two sub-chains (`ModelDecider → DataNormalization → Trainer`) — one per target. The two `DataNormalization_*` nodes consume the **same merged CSV** but apply *per-branch* normalization (`normalization_type` decided by their own ModelDecider). They duplicate because `normalization_type` depends on the model picked per target.
 
 ![Prediction workflow](WORKFLOW.webp)
 
-**Why a linear chain works:** every piece's `OutputModel` echoes the relevant upstream context (`feature_columns`, `target_column`, `model_type`, `data_path`, and so on). Each consumer therefore needs **exactly one** upstream edge to its immediate predecessor, instead of fanning back to every original producer. The Inference → {Evaluate, Explainable} fan-out is the only branch in the graph, because Evaluate and Explainable are independent consumers of the trained model with nothing to gain from being serialized.
+## What changed in this revision
+
+- **`DataPreprocessingPiece`** now accepts two source paths — `data_path_solargis` and `data_path_okte` — and **inner-joins them on `datetime`** to emit one merged dataset with weather columns + market columns side-by-side. `data_path` is kept as a back-compat alias for `data_path_solargis`. With both wired up, the PVOUT model can use OKTE features as predictors and vice-versa.
+- **`ModelDeciderPiece`** now **strips its `target_column` from the echoed `feature_columns`**, so each per-target Decider node emits a feature list that excludes its own target (no leakage). When two Deciders fan out from the same DataNorm-fed branch, each gets a different target — `ModelDecider_PVOUT` strips `PVOUT`, `ModelDecider_Price` strips `spot_price_eur_mwh`.
+- The DAG fork now happens **after DataPreprocessing** (single shared merged CSV up to that point), splitting into two `ModelDecider → DataNorm → Trainer` sub-chains before V-merging at Inference. Two `DataNorm` nodes instead of one — necessary because the normalization choice is per-model, not per-dataset.
 
 ## DAG edges to draw
 
-### Core flow
+### Shared prep (always)
 
 | From | To | Reason |
 |---|---|---|
-| Synthetic | DataPreprocessing | dataset file |
-| DataPreprocessing | ModelDecider | data_path, feature_columns, target_column |
-| ModelDecider | DataNormalization | normalization_type (+ echoes: data_path, feature_columns, target_column, model_type) |
-| DataNormalization | PVOUTPredictionModelTrain | data_path (+ echoes: feature_columns, target_column, model_type) |
-| PVOUTPredictionModelTrain | InferencePiece | model_path (+ echoes: data_path, feature_columns, target_column) |
-| InferencePiece | EvaluateMLModel | forecast_csv_path |
-| InferencePiece | ExplainablePrediction | model_path, data_path, feature_columns (all echoed by Inference) |
+| SyntheticDataGenerator | DataPreprocessing | `data_path_solargis` ← File Path |
+| OKTEDataGenerator | DataPreprocessing | `data_path_okte` ← File Path |
 
-### Optional inline stage — drop in for the error-correction variant
+### PVOUT sub-chain (always)
 
 | From | To | Reason |
 |---|---|---|
-| PVOUTPredictionModelTrain | PVOUTErrorCorrectionModelTrain | baseline_model_path = upstream model_path (+ echoes: data_path, feature_columns, target_column) |
-| PVOUTErrorCorrectionModelTrain | InferencePiece | model_path of correction model (replaces the trainer→inference edge above; the original `baseline_model_path` is still echoed for staged inference) |
+| DataPreprocessing | ModelDecider_PVOUT | data_path, feature_columns, target_column = PVOUT |
+| ModelDecider_PVOUT | DataNormalization_PVOUT | normalization_type + echoes (target stripped from feature_columns) |
+| DataNormalization_PVOUT | PVOUTPredictionModelTrain | data_path + echoes |
+| PVOUTPredictionModelTrain | InferencePiece (pvout entry) | model_path + echoes |
 
-That's **7 edges** for the canonical flow, **8** with the error-correction stage inserted — down from ~14–19 in the previous fan-out layout.
+### Electricity-price sub-chain (always, when targeting price)
+
+| From | To | Reason |
+|---|---|---|
+| DataPreprocessing | ModelDecider_Price | data_path, feature_columns, target_column = spot_price_eur_mwh |
+| ModelDecider_Price | DataNormalization_Price | normalization_type + echoes (target stripped from feature_columns) |
+| DataNormalization_Price | ElectricityPricePredictionModelTrain | data_path + echoes |
+| ElectricityPricePredictionModelTrain | InferencePiece (price entry) | model_path + echoes |
+
+### Optional PVOUT error-correction inline stage
+
+| From | To | Reason |
+|---|---|---|
+| PVOUTPredictionModelTrain | PVOUTErrorCorrectionModelTrain | baseline_model_path + echoes |
+| PVOUTErrorCorrectionModelTrain | InferencePiece (pvout entry) | replaces the direct trainer→inference edge above |
+
+### Inference fan-out (always)
+
+| From | To | Reason |
+|---|---|---|
+| InferencePiece | EvaluateMLModel | `forecasts` list → per-model `pred_df_path` |
+| InferencePiece | ExplainablePrediction | `forecasts` list → per-model `model_path` / `data_path` |
+| InferencePiece | ForecastAggregator | `forecasts` list (datetime + per-model predictions) |
+| DataPreprocessing | ForecastAggregator | `actual_csv_path` (optional, to add the actual target column) |
+
+**Edges:** 12 for the canonical dual-target chain, 13 with error-correction inline, +1 if you wire the aggregator's actual column. The fan-out at DataPrep (to 2 ModelDeciders), the fan-in at Inference (from 2 trainers), and the fan-out from Inference (to 3 consumers) are the only branches — everything else stays linear.
 
 ---
 
-## SyntheticDataGeneratorPiece
+## SyntheticDataGeneratorPiece *(PVOUT branch source)*
 
 | Field | Value | Upstream |
 |---|---|---|
@@ -70,21 +102,45 @@ That's **7 edges** for the canonical flow, **8** with the error-correction stage
 
 Produces `dataset_batch.csv` in its `results/`.
 
-## DataPreprocessingPiece
+## OKTEDataGeneratorPiece *(price branch source)*
+
+| Field | Value | Upstream |
+|---|---|---|
+| Records Count | `100` (any >0) | — |
+| Time Step Minutes | `15` | — |
+| Output Mode | `batch_sample` | — |
+| Output Format | `csv` | — |
+| Start At | (optional ISO timestamp) | — |
+| Timezone Offset Hours | `1.0` (CET) | — |
+| Seed | (optional) | — |
+
+Produces a CSV with `Date, Time, market_area, imbalance_mw, spot_price_eur_mwh, scheduled_generation_mw, actual_generation_mw` and emits `file_path` + `target_column = spot_price_eur_mwh`.
+
+**Important:** keep `Records Count` and `Time Step Minutes` aligned with the Solargis generator. The two are inner-joined on `datetime` in DataPreprocessing — mismatched grids yield few/no overlapping rows.
+
+## DataPreprocessingPiece *(single shared node)*
+
+One DataPreprocessing node consumes both generators. With both `data_path_solargis` and `data_path_okte` wired, it performs an inner-join on `datetime` to emit one merged CSV containing Solargis weather columns AND OKTE market columns side-by-side.
 
 | Field | Value | Upstream |
 |---|---|---|
 | Preprocessing Option | `prediction` | — |
-| Data Path | ← **SyntheticDataGenerator.File Path** | ✓ |
-| Save Data Path | (leave empty — defaults to `<results_path>/preprocessed.csv`) | — |
-| Test Size | (leave empty) | — |
+| Data Path Solargis | ← **SyntheticDataGenerator.File Path** | ✓ |
+| Data Path Okte | ← **OKTEDataGenerator.File Path** | ✓ |
+| Data Path | (leave empty — back-compat alias for `data_path_solargis`) | — |
+| Target Column | (leave empty — each downstream ModelDecider sets its own) | — |
+| Save Data Path | (empty — defaults to `<results_path>/preprocessed.csv`) | — |
 | Keep Datetime | unchecked / `false` | — |
 
-**Important:** keep `keep_datetime` off. If it's on, `datetime` ends up in feature_columns and the trainer's numeric coercion will null-out every row.
+**Important:** keep `Keep Datetime` off. If it's on, `datetime` ends up in `feature_columns` and the trainer's numeric coercion will null-out every row.
 
-Produces `preprocessed.csv` and emits `Data Path`, `Feature Columns`, `Target Column = PVOUT` as typed outputs.
+Produces `preprocessed.csv` (one row per matched timestamp, all columns from both sources) and emits `Data Path`, `Feature Columns` (all numeric columns from both sources, no targets stripped yet), and `Target Column` (empty when not specified — each downstream Decider sets its own).
 
-## ModelDeciderPiece
+## ModelDeciderPiece *(deploy once per target — `_PVOUT` and `_Price`)*
+
+Two instances on the canvas, both fed from `DataPreprocessing`. Each picks its target and (optionally) its model type, and **strips its own target from the echoed `feature_columns`** so the downstream trainer never sees the ground truth as a predictor.
+
+### ModelDecider_PVOUT
 
 | Field | Value | Upstream |
 |---|---|---|
@@ -92,41 +148,53 @@ Produces `preprocessed.csv` and emits `Data Path`, `Feature Columns`, `Target Co
 | Horizon | `1` | — |
 | Available Models | `+` → `xgb_regressor_model` | — |
 | Feature Columns | ← **DataPreprocessing.Feature Columns** | ✓ |
-| Target Column | ← **DataPreprocessing.Target Column** | ✓ |
+| Target Column | `PVOUT` | — |
 | Data Path | ← **DataPreprocessing.Data Path** | ✓ |
 
-Decider auto-picks `xgb_regressor_model` from Available Models and infers `normalization_type=none` because XGBoost doesn't need scaling. Echoes `data_path`, `feature_columns`, `target_column` so DataNormalization can pick them up from a single edge.
-
-## DataNormalizationPiece
+### ModelDecider_Price
 
 | Field | Value | Upstream |
 |---|---|---|
-| Normalization Type | ← **ModelDecider.Normalization Type** | ✓ |
-| Features | (leave empty) | — |
-| Data Path | ← **ModelDecider.Data Path** | ✓ |
-| Dataframe | (leave empty) | — |
-| Feature Columns | ← **ModelDecider.Feature Columns** | ✓ |
-| Target Column | ← **ModelDecider.Target Column** | ✓ |
-| Model Type | ← **ModelDecider.Model Type** | ✓ |
+| Problem Type | `price_prediction` | — |
+| Horizon | `1` | — |
+| Available Models | `+` → `xgb_regressor_model` (or another model better suited to price) | — |
+| Feature Columns | ← **DataPreprocessing.Feature Columns** | ✓ |
+| Target Column | `spot_price_eur_mwh` | — |
+| Data Path | ← **DataPreprocessing.Data Path** | ✓ |
 
-For XGBoost the decider sets normalization to `none` → the piece does a passthrough but still writes `normalized.csv` under its `results/` for traceability. Re-emits `feature_columns`, `target_column`, `model_type` (echoed from upstream) plus its own `data_path` for the trainer.
+Each Decider echoes `data_path`, `model_type`, `normalization_type`, and a **target-stripped** `feature_columns` to its own DataNorm downstream.
 
-## PVOUTPredictionModelTrainPiece
+## DataNormalizationPiece *(deploy once per branch — `_PVOUT` and `_Price`)*
+
+Two instances on the canvas, each downstream of its branch's ModelDecider. Both consume the same merged CSV from DataPreprocessing but apply **different normalization** based on the model chosen by their ModelDecider.
+
+| Field | Value | Upstream (PVOUT branch) | Upstream (price branch) |
+|---|---|---|---|
+| Normalization Type | (from upstream) | ← **ModelDecider_PVOUT.Normalization Type** ✓ | ← **ModelDecider_Price.Normalization Type** ✓ |
+| Data Path | (from upstream) | ← **ModelDecider_PVOUT.Data Path** ✓ | ← **ModelDecider_Price.Data Path** ✓ |
+| Feature Columns | (target-stripped, from upstream) | ← **ModelDecider_PVOUT.Feature Columns** ✓ | ← **ModelDecider_Price.Feature Columns** ✓ |
+| Target Column | (from upstream) | ← **ModelDecider_PVOUT.Target Column** ✓ | ← **ModelDecider_Price.Target Column** ✓ |
+| Model Type | (from upstream) | ← **ModelDecider_PVOUT.Model Type** ✓ | ← **ModelDecider_Price.Model Type** ✓ |
+| Features | (empty) | — | — |
+| Dataframe | (empty) | — | — |
+
+Each instance writes its own `normalized.csv` under `results/` (passthrough for XGBoost). Re-emits all echoes plus its own `data_path` for the trainer.
+
+## PVOUTPredictionModelTrainPiece *(PVOUT branch)*
 
 | Field | Value | Upstream |
 |---|---|---|
-| Model Type | ← **DataNormalization.Model Type** | ✓ |
-| Data Path | ← **DataNormalization.Data Path** | ✓ |
-| Csv Path | (leave empty — alias for Data Path) | — |
-| Feature Columns | ← **DataNormalization.Feature Columns** | ✓ |
-| Target Column | ← **DataNormalization.Target Column** | ✓ |
-| Checkpoint Dir | (leave empty — defaults to `results_path`) | — |
+| Model Type | ← **DataNormalization_PVOUT.Model Type** | ✓ |
+| Data Path | ← **DataNormalization_PVOUT.Data Path** | ✓ |
+| Feature Columns | ← **DataNormalization_PVOUT.Feature Columns** | ✓ |
+| Target Column | ← **DataNormalization_PVOUT.Target Column** | ✓ |
+| Checkpoint Dir | (empty — defaults to `results_path`) | — |
 
-Produces `pvout_prediction_xgb_regressor_model.pkl` and emits `Model Path` plus echoed `Data Path`, `Feature Columns`, `Target Column` as typed outputs for the next piece in the chain.
+Produces `pvout_prediction_<model_type>.pkl` and emits `Model Path`, echoed `Data Path`, `Feature Columns`, `Target Column`.
 
-## PVOUTErrorCorrectionModelTrainPiece *(optional inline stage)*
+## PVOUTErrorCorrectionModelTrainPiece *(optional inline on PVOUT branch)*
 
-Drop this node between the baseline trainer and Inference when you want a second-stage XGBoost trained on the residual `PVOUT − PVOUT_PRED`. With `baseline_model_path` wired up, the piece auto-generates `PVOUT_PRED` from the upstream baseline checkpoint — no extra inference step needed during training.
+Drop this between the baseline PVOUT trainer and Inference when you want a residual-correction layer. With `Baseline Model Path` wired up, the piece auto-generates `PVOUT_PRED` from the baseline checkpoint during training.
 
 | Field | Value | Upstream |
 |---|---|---|
@@ -135,132 +203,183 @@ Drop this node between the baseline trainer and Inference when you want a second
 | Baseline Model Path | ← **PVOUTPredictionModelTrain.Model Path** | ✓ |
 | Feature Columns | ← **PVOUTPredictionModelTrain.Feature Columns** | ✓ |
 | Target Column | ← **PVOUTPredictionModelTrain.Target Column** | ✓ |
-| Model Setup → Pred Column | (leave empty — defaults to `PVOUT_PRED`, auto-filled from the baseline checkpoint) | — |
-| Checkpoint Dir | (leave empty — defaults to `results_path`) | — |
+| Model Setup → Pred Column | (empty — defaults to `PVOUT_PRED`) | — |
+| Checkpoint Dir | (empty) | — |
 
-Produces `pvout_error_correction_<model_type>.pkl` (same `{"metadata", "trained_model_object"}` envelope as the baseline trainer). Emits its own `Model Path` (correction model) plus echoed `Data Path`, `Feature Columns`, `Target Column`, and `Baseline Model Path` (the upstream baseline's model_path, forwarded so InferencePiece can run staged inference from a single edge).
+Emits its own `Model Path` (correction model) plus echoed fields and `Baseline Model Path` (for staged inference). When inserted, **the PVOUT entry on Inference points at the correction model's `Model Path`, not the baseline's.**
 
-**Other supported Model Types** — same options as before (`error_correction_residual_meta_xgb_regressor_model`, `error_correction_difficulty_weighted_xgb_regressor_model`, `linear_regression`, `ridge_regression`). Only the XGB variants need `Baseline Model Path`.
-
-## InferencePiece
-
-Inference has two viable shapes depending on whether the error-correction stage is in the DAG. In both shapes the **single upstream edge** is the piece immediately to its left in the chain.
-
-### Shape A — baseline only (chain ends `… → Trainer → Inference`)
+## ElectricityPricePredictionModelTrainPiece *(price branch)*
 
 | Field | Value | Upstream |
 |---|---|---|
-| Mode | `pvout_correction` | — |
-| Model Path | ← **PVOUTPredictionModelTrain.Model Path** | ✓ |
-| Data Path | ← **PVOUTPredictionModelTrain.Data Path** | ✓ |
-| Feature Columns | ← **PVOUTPredictionModelTrain.Feature Columns** | ✓ |
-| Target Column | ← **PVOUTPredictionModelTrain.Target Column** | ✓ |
+| Model Type | (empty — uses internal XGBRegressor) | — |
+| Data Path | ← **DataNormalization_Price.Data Path** | ✓ |
+| Feature Columns | ← **DataNormalization_Price.Feature Columns** | ✓ |
+| Target Column | ← **DataNormalization_Price.Target Column** (`spot_price_eur_mwh`) | ✓ |
+| Output Dir | (empty — defaults to `results_path`) | — |
+| Model Filename | (empty — `electricity_price_xgb.pkl` by default) | — |
+
+Produces `electricity_price_xgb.pkl` + `preprocessing_metadata.json` next to it, and emits `Model Path`, `Feature Columns`, `Target Column`, `Preprocessing Metadata Path`.
+
+## InferencePiece *(V-merge — both trainers feed this single node)*
+
+InferencePiece runs each entry in its `models` list independently and produces one forecast CSV per entry under `forecast_<model_id>.csv`. Wire the `models` list with one entry per trainer.
+
+| Field | Value | Upstream |
+|---|---|---|
+| Models | List with one entry per upstream trainer — see below | ✓ |
 | Datetime Column | `datetime` | — |
-| Base Forecast Column | `PVOUT` | — |
-| Horizon Column | (leave empty — only set when `flag_each_day=true` on preprocessor) | — |
-| Max Horizon | (leave empty) | — |
+| Horizon Column | (empty unless `flag_each_day=true` on a preprocessor) | — |
+| Max Horizon | (empty) | — |
 
-Produces `forecast.csv` (datetime + base_forecast + correction + final_forecast + PVOUT) and emits `Forecast Csv Path` for the evaluator, plus echoed `Model Path`, `Data Path`, `Feature Columns`, `Target Column` for ExplainablePrediction.
-
-**Semantic note about Mode:**
-- `pvout_correction` computes `final_forecast = PVOUT + model.predict(X)`. With `base_forecast_column=PVOUT`, this means `final_forecast = truth + prediction`. It runs, but `final_forecast − PVOUT` is just the model prediction, not an error.
-- `price_level` computes `final_forecast = model.predict(X)` directly with no baseline. For pure prediction semantics, switch Mode to this and leave Base Forecast Column blank.
-
-### Shape B — staged baseline + correction (chain ends `… → Trainer → ErrorCorrect → Inference`)
-
-| Field | Value | Upstream |
-|---|---|---|
-| Mode | (leave empty — `Stages` overrides it) | — |
-| Model Path | ← **PVOUTErrorCorrectionModelTrain.Model Path** | ✓ |
-| Data Path | ← **PVOUTErrorCorrectionModelTrain.Data Path** | ✓ |
-| Feature Columns | ← **PVOUTErrorCorrectionModelTrain.Feature Columns** | ✓ |
-| Target Column | ← **PVOUTErrorCorrectionModelTrain.Target Column** | ✓ |
-| Stages | see JSON below — wire `model_path` of stage 1 to **PVOUTErrorCorrectionModelTrain.Baseline Model Path** | ✓ |
+### `Models` list entries
 
 ```json
 [
   {
-    "mode": "price_level",
-    "model_path": "<PVOUTErrorCorrectionModelTrain.Baseline Model Path>",
-    "feature_columns": "<PVOUTErrorCorrectionModelTrain.Feature Columns>",
-    "inject_forecast_as": "PVOUT_PRED"
+    "model_id": "pvout",
+    "mode": "pvout_correction",
+    "model_path": "<PVOUTPredictionModelTrain.Model Path  or  PVOUTErrorCorrectionModelTrain.Model Path>",
+    "data_path": "<PVOUTPredictionModelTrain.Data Path>",
+    "feature_columns": "<PVOUTPredictionModelTrain.Feature Columns>",
+    "target_column": "PVOUT",
+    "base_forecast_column": "PVOUT"
   },
   {
-    "mode": "pvout_correction",
-    "model_path": "<PVOUTErrorCorrectionModelTrain.Model Path>",
-    "feature_columns": "<PVOUTErrorCorrectionModelTrain.Feature Columns>",
-    "base_forecast_column": "PVOUT_PRED"
+    "model_id": "price",
+    "mode": "price_level",
+    "model_path": "<ElectricityPricePredictionModelTrain.Model Path>",
+    "data_path": "<DataNormalization_Price.Data Path>",
+    "feature_columns": "<ElectricityPricePredictionModelTrain.Feature Columns>",
+    "target_column": "spot_price_eur_mwh",
+    "preprocessing_metadata_path": "<ElectricityPricePredictionModelTrain.Preprocessing Metadata Path>"
   }
 ]
 ```
 
-Produces a `forecast.csv` whose `final_forecast = PVOUT_PRED + correction(X)` — the actual error-corrected forecast.
+Produces one `forecast_<model_id>.csv` per entry (e.g. `forecast_pvout.csv`, `forecast_price.csv`) and emits `forecasts: list[ForecastEntry]` containing `{model_id, forecast_csv_path, mode, model_path, feature_columns, target_column}` for each.
 
-## EvaluateMLModelPiece
+**Mode reference:**
+- `pvout_correction` — `final_forecast = base_forecast_column + model.predict(X)`. Use with PVOUT (or its correction model).
+- `price_level` — `final_forecast = model.predict(X)`, no baseline. Use with the electricity price model.
+- `price_ahead` — `final_forecast = baseline_column + correction(X)`. Use when you have a baseline day-ahead price column and a price-correction model.
+
+## EvaluateMLModelPiece *(sibling of Explainable + Aggregator)*
 
 | Field | Value | Upstream |
 |---|---|---|
-| Evaluation Option | `normal` | — |
+| Evaluations | List with one entry per model — see below | ✓ |
 | Baseline Id | `1` | — |
 | Plot | unchecked | — |
-| Forecast Column | `correction` (Shape A) **or** `final_forecast` (Shape B / `price_level` mode) | — |
-| Target Column | `PVOUT` | — |
-| Pred Df Path | ← **Inference.Forecast Csv Path** | ✓ |
-| True Baseline Df Path | (leave empty — only for `errorcorrection` mode) | — |
-| Pred Df / True Baseline Df / Y True | (leave empty) | — |
 
-Produces `metrics.json` with `mae`, `rmse`, `mape`, `forecast_column`, `target_column`, `n`.
+### `Evaluations` list entries
 
-**Why `correction` not `final_forecast` for Shape A:** see the Inference semantic note above. `correction` = `model.predict(X)`, so `correction − PVOUT` measures actual prediction error. For Shape B (staged), `final_forecast` is the meaningful corrected forecast, so use it directly.
+```json
+[
+  {
+    "model_id": "pvout",
+    "evaluation_option": "normal",
+    "forecast_column": "correction",
+    "target_column": "PVOUT",
+    "pred_df_path": "<forecasts[0].forecast_csv_path  (pvout)>"
+  },
+  {
+    "model_id": "price",
+    "evaluation_option": "normal",
+    "forecast_column": "final_forecast",
+    "target_column": "spot_price_eur_mwh",
+    "pred_df_path": "<forecasts[1].forecast_csv_path  (price)>"
+  }
+]
+```
 
-## ExplainablePredictionPiece *(optional, sibling of Evaluate)*
+Produces `metrics_<model_id>.json` per entry plus an aggregated `artifacts.per_model = {model_id: metrics}`.
 
-Drop this in parallel with EvaluateMLModelPiece — both consume InferencePiece, neither feeds the other.
+## ExplainablePredictionPiece *(sibling of Evaluate + Aggregator)*
 
 | Field | Value | Upstream |
 |---|---|---|
+| Explanations | List with one entry per model — see below | ✓ |
 | Explain | `true` | — |
-| Explain Method | `shap` (default when `explain=true`) | — |
-| Model Path | ← **Inference.Model Path** | ✓ |
-| Data Path | ← **Inference.Data Path** | ✓ |
-| Feature Columns | ← **Inference.Feature Columns** | ✓ |
-| Target Column | ← **Inference.Target Column** (informational) | ✓ |
-| Use Diagnostic Loss | unchecked unless the upstream correction trainer was built with `use_diagnostic_loss=True` | — |
+| Explain Method | `shap` (default when `Explain=true`) | — |
 
-Produces `artifacts.explainability` (`shap_values`, `feature_names`, `base_value`, `explainer_type=TreeExplainer`). When the upstream correction model was trained with `use_diagnostic_loss=True` and `Use Diagnostic Loss=true` is checked here, also produces `artifacts.diagnostic_heatmaps` with base64-encoded heatmaps over `(horizon × regime)` and `(horizon × hour)`.
+### `Explanations` list entries
 
-The piece transparently explains whichever model Inference used — baseline (Shape A) or correction (Shape B). No re-wiring needed when toggling the error-correction stage.
+```json
+[
+  {
+    "model_id": "pvout",
+    "explain": true,
+    "explain_method": "shap",
+    "model_path": "<PVOUTPredictionModelTrain.Model Path>",
+    "data_path": "<PVOUTPredictionModelTrain.Data Path>",
+    "feature_columns": "<PVOUTPredictionModelTrain.Feature Columns>"
+  },
+  {
+    "model_id": "price",
+    "explain": true,
+    "explain_method": "shap",
+    "model_path": "<ElectricityPricePredictionModelTrain.Model Path>",
+    "data_path": "<DataNormalization_Price.Data Path>",
+    "feature_columns": "<ElectricityPricePredictionModelTrain.Feature Columns>"
+  }
+]
+```
+
+Produces `artifacts.per_model[model_id].explainability` with SHAP `shap_values`, `feature_names`, `base_value` for each model.
+
+## ForecastAggregatorPiece *(sibling of Evaluate + Explainable)*
+
+Joins all per-model forecast CSVs into one comparison CSV. The `forecasts` field on its input is the same list shape that `InferencePiece` emits, so wiring is a single edge.
+
+| Field | Value | Upstream |
+|---|---|---|
+| Forecasts | ← **Inference.Forecasts** | ✓ |
+| Actual CSV Path | ← **DataPreprocessing.Data Path** | ✓ (optional, supplies the `actual_<target>` column) |
+| Target Column | (empty — falls back to first forecast entry's `target_column`) | — |
+| Datetime Column | `datetime` | — |
+| Horizon Column | `pred_sequence_id` | — |
+| Forecast Column | `final_forecast` | — |
+| Include Diff | unchecked (toggle if you want `diff_<model_id>` columns) | — |
+| Output CSV Name | `aggregated_forecast.csv` (default) | — |
+
+Produces `aggregated_forecast.csv` with columns `datetime, pred_sequence_id, pred_<model_id>, …` (and optional `actual_<target>` + `diff_<model_id>`).
 
 ---
 
 ## Quick sanity checklist before each run
 
-- All four images pulled fresh after CI publishes:
+- Pull fresh images for every group after CI publishes (one for each `requirements_*.txt`):
   ```
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group0
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group2
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group3
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group0   # numpy+pandas (Synthetic, OKTE, DataPrep, Decider, Norm, Evaluate, Aggregator)
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1   # tabpfn-heavy (PVOUTPredictionModelTrain)
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group2   # xgboost+sklearn+joblib (Inference, ErrorCorrection, ElectricityTrain)
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group3   # PyTorch GPU (TestGpuSupport, optional)
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group4   # shap (ExplainablePrediction)
   ```
-- Domino piece repository refreshed to the latest `dev-3` release so the DAG points at current images and exposes the latest typed fields.
-- The chain has exactly one edge between consecutive pieces. The only fan-out is Inference → {Evaluate, Explainable}.
-- ModelDecider's Available Models contains `xgb_regressor_model`.
-- DataPreprocessing's Keep Datetime is off.
-- **If using the error-correction stage:** Baseline Model Path on the correction trainer is wired to the baseline trainer's Model Path, and the inference node receives its single edge from the correction trainer (not from the baseline trainer).
-- **If using staged inference (Shape B):** the `stages` JSON references both checkpoints, with `model_path` of stage 1 = `Baseline Model Path` echoed forward by the correction trainer.
+- `git pull` first so `.domino/dependencies_map.json` matches the latest auto-organize commit; refresh the piece repository in Domino UI afterwards.
+- **DataPreprocessing** has both `Data Path Solargis` and `Data Path Okte` wired (otherwise the merge falls back to a single-source dataset and the other branch's features are missing).
+- **Time grids** of the two generators align: same `Time Step Minutes` and `Records Count`, similar `Start At`. The inner-join drops rows with no match.
+- **ModelDecider_PVOUT** has `Target Column = PVOUT`; **ModelDecider_Price** has `Target Column = spot_price_eur_mwh`. The target-stripping logic relies on this.
+- **Inference Models list** has at least one entry per active trainer, each with a non-empty `mode` and `model_path`.
+- **If using PVOUT error-correction:** the PVOUT entry's `model_path` points at the *correction* trainer's checkpoint, not the baseline's.
+- **DataPreprocessing's Keep Datetime is off.**
 
 ## Files dropped into each piece's `results/`
 
 | Piece | File | Purpose |
 |---|---|---|
-| Synthetic | `dataset_batch.csv` | input dataset |
-| DataPreprocessing | `preprocessed.csv` | numeric-only features + PVOUT |
-| ModelDecider | `decision.json` | chosen `model_type`, `normalization_type` |
-| DataNormalization | `normalized.csv` | passthrough (or scaled) version of preprocessed |
-| PVOUTPredictionModelTrain | `pvout_prediction_<model_type>.pkl` | trained baseline model checkpoint |
-| PVOUTErrorCorrectionModelTrain *(optional)* | `pvout_error_correction_<model_type>.pkl` | trained correction model checkpoint |
-| Inference | `forecast.csv` | datetime + base_forecast + correction + final_forecast + PVOUT |
-| EvaluateMLModel | `metrics.json` | MAE / RMSE / MAPE |
-| ExplainablePrediction *(optional)* | (artifacts only, no on-disk file by default) | SHAP `shap_values` + `feature_names` (+ optional diagnostic heatmaps as base64 PNGs in artifacts) |
+| SyntheticDataGenerator | `dataset_batch.csv` | input dataset (PVOUT side) |
+| OKTEDataGenerator | OKTE CSV | input dataset (price side) |
+| DataPreprocessing | `preprocessed.csv` | merged numeric-only features + targets |
+| ModelDecider (× 2) | `decision.json` | chosen `model_type`, `normalization_type`, target-stripped feature list |
+| DataNormalization (× 2) | `normalized.csv` | passthrough or scaled (per-branch) |
+| PVOUTPredictionModelTrain | `pvout_prediction_<model_type>.pkl` | baseline PVOUT checkpoint |
+| PVOUTErrorCorrectionModelTrain *(optional)* | `pvout_error_correction_<model_type>.pkl` | residual-correction checkpoint |
+| ElectricityPricePredictionModelTrain | `electricity_price_xgb.pkl` + `preprocessing_metadata.json` | price model checkpoint + feature metadata |
+| InferencePiece | `forecast_<model_id>.csv` (one per entry) | datetime + base_forecast + correction + final_forecast (+ target if present) |
+| EvaluateMLModel | `metrics_<model_id>.json` (one per entry) | MAE / RMSE / MAPE / n per model |
+| ExplainablePrediction | (artifacts only by default) | SHAP per-model `shap_values` + `feature_names` |
+| ForecastAggregator | `aggregated_forecast.csv` | datetime + `pred_<model_id>` columns (+ optional `actual_<target>` + `diff_<model_id>`) |
 
 All these land on the host through Domino's `results_path` mount — no Docker exec needed to inspect them.

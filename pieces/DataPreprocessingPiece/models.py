@@ -8,7 +8,30 @@ class InputModel(BaseModel):
         default=None,
         description="One of: `none`, `prediction`, `correction`.",
     )
-    data_path: str | None = Field(default=None, description="Optional input data path.")
+    data_path: str | None = Field(
+        default=None,
+        description=(
+            "Single-source input path (back-compat alias for `data_path_solargis`). "
+            "Use the more specific `data_path_solargis` / `data_path_okte` fields below "
+            "to merge Solargis + OKTE datasets into one preprocessed CSV."
+        ),
+    )
+    data_path_solargis: str | None = Field(
+        default=None,
+        description=(
+            "Path to Solargis-style CSV (weather / PVOUT). "
+            "Wire upstream from `SyntheticDataGeneratorPiece.File Path`."
+        ),
+    )
+    data_path_okte: str | None = Field(
+        default=None,
+        description=(
+            "Path to OKTE-style CSV (electricity market). "
+            "Wire upstream from `OKTEDataGeneratorPiece.File Path`. "
+            "When both Solargis and OKTE paths are provided, the piece inner-joins "
+            "them on `datetime` and emits one merged dataset with all features."
+        ),
+    )
     save_data_path: str | None = Field(
         default=None, description="Optional output path."
     )

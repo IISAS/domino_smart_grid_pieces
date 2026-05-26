@@ -81,6 +81,8 @@ def preprocess_prediction(payload):
 
     df = _read_input_dataframe(payload)
     data_path = payload.get("data_path")
+    data_path_solargis = payload.get("data_path_solargis")
+    data_path_okte = payload.get("data_path_okte")
     save_data_path = payload.get("save_data_path")
     flag_each_day_enabled = bool(payload.get("flag_each_day", False))
     keep_datetime = bool(payload.get("keep_datetime", False))
@@ -111,13 +113,52 @@ def preprocess_prediction(payload):
     target_col_input = payload.get("target_column")
     target_col = str(target_col_input) if target_col_input else "PVOUT"
 
+    # data_path is the back-compat alias for data_path_solargis.
+    solargis_path = data_path_solargis or data_path
+
     if df is None:
-        if not data_path:
+        if not solargis_path and not data_path_okte:
             raise ValueError(
-                "preprocessing_option='prediction' requires either `payload['dataframe']` "
-                "or `payload['data_path']`."
+                "preprocessing_option='prediction' requires `payload['dataframe']`, "
+                "or `payload['data_path']` / `data_path_solargis`, or "
+                "`payload['data_path_okte']` (or both Solargis + OKTE for the merged shape)."
             )
-        df = _read_supported_csv(data_path)
+
+        if solargis_path and data_path_okte:
+            # Dual-source: read both and inner-join on `datetime` so each row in the
+            # merged dataset has Solargis weather columns AND OKTE market columns.
+            solargis_df = _read_supported_csv(solargis_path)
+            solargis_df = ensure_datetime_column(solargis_df)
+
+            okte_df = _read_supported_csv(data_path_okte)
+            okte_df = ensure_datetime_column(okte_df)
+
+            # Drop Date/Time from OKTE side after datetime is derived, to avoid
+            # collisions when the Solargis side doesn't have them.
+            okte_drop = [
+                c for c in ("Date", "Time")
+                if c in okte_df.columns and c not in solargis_df.columns
+            ]
+            if okte_drop:
+                okte_df = okte_df.drop(columns=okte_drop)
+
+            df = pd.merge(
+                solargis_df,
+                okte_df,
+                on="datetime",
+                how="inner",
+                suffixes=("", "_okte"),
+            )
+            if df.empty:
+                raise ValueError(
+                    "Inner-join on `datetime` produced 0 rows. Check that the Solargis "
+                    "and OKTE generators emit overlapping timestamps "
+                    "(same `time_step_minutes` and `records_count`)."
+                )
+        elif solargis_path:
+            df = _read_supported_csv(solargis_path)
+        else:
+            df = _read_supported_csv(data_path_okte)
 
     data = df
     data = ensure_datetime_column(data)

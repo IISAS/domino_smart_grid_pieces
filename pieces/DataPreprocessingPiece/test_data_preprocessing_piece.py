@@ -142,3 +142,82 @@ def test_preprocess_solargis_data_accepts_date_time_schema():
     out = preprocess_solargis_data(data)
     assert "datetime" in out.columns
     assert "hour_of_day" in out.columns
+
+
+def test_preprocess_prediction_merges_solargis_and_okte(tmp_path):
+    """
+    When both `data_path_solargis` and `data_path_okte` are wired, the piece
+    should inner-join the two on `datetime` and emit one merged dataset whose
+    feature pool includes columns from both sources.
+    """
+    solargis_path = tmp_path / "solargis.csv"
+    solargis_df = pd.DataFrame(
+        {
+            "datetime": [
+                "2026-05-07 10:00:00",
+                "2026-05-07 10:15:00",
+                "2026-05-07 10:30:00",
+            ],
+            "GHI": [500.0, 520.0, 540.0],
+            "DIF": [100.0, 110.0, 120.0],
+            "SE": [50.0, 52.0, 54.0],
+            "PVOUT": [4.1, 4.3, 4.5],
+        }
+    )
+    solargis_df.to_csv(solargis_path, index=False)
+
+    okte_path = tmp_path / "okte.csv"
+    okte_df = pd.DataFrame(
+        {
+            "Date": ["07.05.2026", "07.05.2026", "07.05.2026"],
+            "Time": ["10:00", "10:15", "10:30"],
+            "spot_price_eur_mwh": [80.0, 82.0, 79.0],
+            "imbalance_mw": [10.0, -5.0, 3.0],
+            "scheduled_generation_mw": [2000.0, 2050.0, 2100.0],
+            "actual_generation_mw": [1990.0, 2060.0, 2080.0],
+        }
+    )
+    okte_df.to_csv(okte_path, index=False)
+
+    result = preprocess_prediction(
+        {
+            "preprocessing_option": "prediction",
+            "data_path_solargis": str(solargis_path),
+            "data_path_okte": str(okte_path),
+            "target_column": "PVOUT",
+        }
+    )
+
+    features = result["artifacts"]["features"]
+    assert "GHI" in features  # Solargis side
+    assert "spot_price_eur_mwh" in features  # OKTE side
+    assert "imbalance_mw" in features  # OKTE side
+    # The chosen target is excluded from features.
+    assert "PVOUT" not in features
+
+
+def test_preprocess_prediction_data_path_acts_as_solargis_alias(tmp_path):
+    """
+    Back-compat: a DAG that wires only the original `data_path` field still
+    works — it's treated as `data_path_solargis` when no explicit Solargis path
+    is provided.
+    """
+    solargis_path = tmp_path / "solargis_only.csv"
+    pd.DataFrame(
+        {
+            "datetime": ["2026-05-07 10:00:00", "2026-05-07 10:15:00"],
+            "GHI": [500.0, 520.0],
+            "DIF": [100.0, 110.0],
+            "SE": [50.0, 52.0],
+            "PVOUT": [4.1, 4.3],
+        }
+    ).to_csv(solargis_path, index=False)
+
+    result = preprocess_prediction(
+        {
+            "preprocessing_option": "prediction",
+            "data_path": str(solargis_path),
+        }
+    )
+    assert result["artifacts"]["target_column"] == "PVOUT"
+    assert "GHI" in result["artifacts"]["features"]
