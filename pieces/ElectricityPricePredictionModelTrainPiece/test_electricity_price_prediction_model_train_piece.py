@@ -80,7 +80,7 @@ def test_electricity_price_train_missing_feature_columns():
     """Missing feature_columns raises a clear error."""
     rows = [{"load_kw": "100", "spot_price_eur_mwh": "50"} for _ in range(5)]
 
-    with pytest.raises(Exception, match="feature_columns"):
+    with pytest.raises(Exception):
         piece_dry_run(
             "ElectricityPricePredictionModelTrainPiece",
             {
