@@ -117,20 +117,55 @@ jobs:
 
       - name: Publish images
         working-directory: ${{ env.CI_WORKDIR }}
+        shell: bash
         env:
-          GHCR_USERNAME: ${{ github.actor }}
-          # Helps with large image pushes and slow runner networking.
-          DOCKER_CLIENT_TIMEOUT: "300"
-          COMPOSE_HTTP_TIMEOUT: "300"
+          # PIECES_IMAGES_MAP is populated by `domino piece organize --build-images`
+          # (written to $GITHUB_ENV) as `{"<piece>": "<image:tag>", ...}`.
+          PIECES_IMAGES_MAP_JSON: ${{ env.PIECES_IMAGES_MAP }}
         run: |
-          echo "Publishing images (up to 3 attempts)..."
-          for i in 1 2 3; do
-            domino piece publish-images --registry-token ${{ secrets.GITHUB_TOKEN }} && exit 0
-            echo "Attempt $i failed."
-            sleep 20
+          set -euo pipefail
+
+          # `domino piece publish-images` uses docker-py, whose default 60s
+          # socket read timeout trips on large image pushes when the local
+          # docker daemon goes quiet between progress chunks. Push via the
+          # docker CLI directly instead: it streams stably and respects
+          # DOCKER_CLIENT_TIMEOUT-style behaviour. The earlier
+          # `docker/login-action` step already authenticated us against ghcr.io.
+
+          if [[ -z "${PIECES_IMAGES_MAP_JSON:-}" ]]; then
+            echo "PIECES_IMAGES_MAP is empty — `domino piece organize` did not produce any images?"
+            exit 1
+          fi
+
+          mapfile -t IMAGES < <(echo "$PIECES_IMAGES_MAP_JSON" | jq -r '[.[]] | unique | .[]')
+
+          if [[ ${#IMAGES[@]} -eq 0 ]]; then
+            echo "No images extracted from PIECES_IMAGES_MAP."
+            exit 1
+          fi
+
+          echo "Will push ${#IMAGES[@]} image(s):"
+          printf '  - %s\n' "${IMAGES[@]}"
+
+          for img in "${IMAGES[@]}"; do
+            echo "::group::Pushing $img"
+            pushed=0
+            for attempt in 1 2 3 4 5; do
+              if docker push "$img"; then
+                echo "Pushed $img on attempt $attempt."
+                pushed=1
+                break
+              fi
+              backoff=$((attempt * 20))
+              echo "Push of $img failed on attempt $attempt; retrying in ${backoff}s..."
+              sleep "$backoff"
+            done
+            echo "::endgroup::"
+            if [[ "$pushed" -ne 1 ]]; then
+              echo "Push of $img failed after 5 attempts."
+              exit 1
+            fi
           done
-          echo "Publish failed after retries."
-          exit 1
 
       - name: Sync generated domino metadata back
         shell: bash
