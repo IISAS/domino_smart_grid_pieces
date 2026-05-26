@@ -19,8 +19,7 @@
             "DataNormalizationPiece",
             "DataPreprocessingPiece",
             "ModelDeciderPiece",
-            "OKTEDataGeneratorPiece",
-            "SyntheticDataGeneratorPiece"
+            "OKTEDataGeneratorPiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev2-group1"
