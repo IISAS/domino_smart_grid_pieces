@@ -7,9 +7,9 @@
 SyntheticDataGeneratorPiece
 # DataNormalizationPiece
 # ElectricityPricePredictionModelTrainPiece
-EvaluateMLModelPiece
+# EvaluateMLModelPiece
 ExplainablePredictionPiece
-InferencePiece
+#InferencePiece
 # ModelDeciderPiece
 PVOUTErrorCorrectionModelTrainPiece
 PVOUTPredictionModelTrainPiece
