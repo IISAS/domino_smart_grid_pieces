@@ -7,8 +7,10 @@
         "pieces": [
             "DataNormalizationPiece",
             "DataPreprocessingPiece",
+            "ForecastAggregatorPiece",
             "ModelDeciderPiece",
             "EvaluateMLModelPiece",
+            "OKTEDataGeneratorPiece",
             "SyntheticDataGeneratorPiece"
         ],
         "secrets": [],
