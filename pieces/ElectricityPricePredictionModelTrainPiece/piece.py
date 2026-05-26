@@ -499,8 +499,16 @@ class ElectricityPricePredictionModelTrainPiece(BasePiece):
 
         if len(df) < 2:
 
+            nan_cols = [
+                col
+                for col in feature_columns + [target_column]
+                if df[col].isna().all()
+            ]
             raise ValueError(
-                "Need at least 2 valid rows after dropping NaNs in features and target."
+                f"Need at least 2 valid rows after dropping NaNs in features and target. "
+                f"Columns that are entirely NaN (likely non-numeric or wrong name): {nan_cols}. "
+                f"feature_columns={feature_columns}, target_column={target_column!r}, "
+                f"available CSV columns={list(df.columns)}."
             )
 
         X = df[feature_columns].to_numpy(dtype=float)

@@ -127,7 +127,7 @@ class DataNormalizationPiece(BasePiece):
         # pieces can plumb `data_path` consistently.
         if normalization_type is None or str(normalization_type).lower() == "none":
             df_out = df
-            applied_features = list(getattr(df_out, "columns", []))
+            applied_features = features if features else list(getattr(df_out, "columns", []))
             artifacts = {
                 "normalized_data": _to_serializable_dataframe_like(df_out),
                 "normalization_type": "none",

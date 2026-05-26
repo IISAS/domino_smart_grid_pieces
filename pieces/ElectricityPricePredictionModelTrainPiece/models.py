@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class InputModel(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     data_path: str | None = Field(default=None, description="Input CSV path.")
     csv_path: str | None = Field(default=None, description="Alias for input CSV path.")
@@ -41,6 +41,8 @@ class InputModel(BaseModel):
 
 
 class OutputModel(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     message: str = Field(description="Human-readable status message.")
     model_path: str | None = Field(
         default=None,
