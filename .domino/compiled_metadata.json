@@ -76,6 +76,27 @@
                     "description": "Output directory.",
                     "title": "Output Dir"
                 },
+                "feature_columns": {
+                    "description": "Feature columns used for training (consumed from preprocessor/decider).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Target column name (defaults to `PVOUT`).",
+                    "title": "Target Column"
+                },
                 "model_filename": {
                     "anyOf": [
                         {
