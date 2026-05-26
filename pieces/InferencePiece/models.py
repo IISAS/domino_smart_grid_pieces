@@ -9,7 +9,7 @@ class ModelSpec(BaseModel):
     can override datetime/horizon columns, schema-strictness, etc.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     model_id: str | None = Field(
         default=None,
@@ -56,7 +56,7 @@ class ModelSpec(BaseModel):
 
 
 class InputModel(BaseModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
 
     models: list[ModelSpec] | None = Field(
         default=None,
@@ -115,6 +115,8 @@ class InputModel(BaseModel):
 
 
 class ForecastEntry(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     model_id: str = Field(description="Identifier of the model that produced this forecast.")
     model_path: str | None = Field(default=None, description="Source model checkpoint.")
     mode: str | None = Field(default=None, description="Inference mode used.")
@@ -127,6 +129,8 @@ class ForecastEntry(BaseModel):
 
 
 class OutputModel(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     message: str = Field(description="Human-readable status message.")
     forecasts: list[ForecastEntry] = Field(
         default_factory=list,
