@@ -67,8 +67,14 @@ def test_okte_data_generator_piece_realtime_mode():
 
 
 def test_okte_data_generator_piece_seed_reproducibility():
-    a = piece_dry_run("OKTEDataGeneratorPiece", {"records_count": 3, "seed": 99})
-    b = piece_dry_run("OKTEDataGeneratorPiece", {"records_count": 3, "seed": 99})
+    a = piece_dry_run(
+        "OKTEDataGeneratorPiece",
+        {"records_count": 3, "seed": 99, "output_format": "json"},
+    )
+    b = piece_dry_run(
+        "OKTEDataGeneratorPiece",
+        {"records_count": 3, "seed": 99, "output_format": "json"},
+    )
     if os.environ.get("PIECES_IMAGES_MAP"):
         return
     records_a = json.loads(Path(a["file_path"]).read_text(encoding="utf-8"))

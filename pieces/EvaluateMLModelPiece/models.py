@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -31,14 +33,14 @@ class EvalSpec(BaseModel):
         default=None,
         description="Path to true-baseline CSV for errorcorrection mode.",
     )
-    pred_df: str | None = Field(
-        default=None, description="Inline predictions payload (JSON object)."
+    pred_df: Any = Field(
+        default=None, description="Inline predictions payload (JSON object/list/string)."
     )
-    true_baseline_df: str | None = Field(
-        default=None, description="Optional baseline payload (JSON object)."
+    true_baseline_df: Any = Field(
+        default=None, description="Optional baseline payload (JSON object/list/string)."
     )
-    y_true: str | None = Field(
-        default=None, description="Optional true values (JSON array)."
+    y_true: Any = Field(
+        default=None, description="Optional true values (JSON array/string)."
     )
 
 
@@ -81,14 +83,16 @@ class InputModel(BaseModel):
         default=None,
         description="Path to true-baseline CSV for errorcorrection mode.",
     )
-    pred_df: str | None = Field(
-        default=None, description="Inline predictions payload as JSON object."
+    pred_df: Any = Field(
+        default=None,
+        description="Inline predictions payload (JSON object/list/string).",
     )
-    true_baseline_df: str | None = Field(
-        default=None, description="Optional baseline payload as JSON object."
+    true_baseline_df: Any = Field(
+        default=None,
+        description="Optional baseline payload (JSON object/list/string).",
     )
-    y_true: str | None = Field(
-        default=None, description="Optional true values as JSON array."
+    y_true: Any = Field(
+        default=None, description="Optional true values (JSON array/string)."
     )
 
     @model_validator(mode="before")
@@ -103,7 +107,9 @@ class InputModel(BaseModel):
         return data
 
     def to_payload_dict(self) -> dict:
-        return self.model_dump(exclude_none=True, exclude_defaults=True)
+        # `exclude_unset` keeps explicitly-set defaults (e.g. evaluation_option="normal")
+        # so the piece can distinguish "no input provided" from "user asked for the default".
+        return self.model_dump(exclude_none=True, exclude_unset=True)
 
     def payload_as_dict(self) -> dict:
         return self.to_payload_dict()
