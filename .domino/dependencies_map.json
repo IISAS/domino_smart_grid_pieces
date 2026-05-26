@@ -5,7 +5,8 @@
             "requirements_file": "requirements_1.txt"
         },
         "pieces": [
-            "ElectricityPricePredictionModelTrainPiece"
+            "ElectricityPricePredictionModelTrainPiece",
+            "InferencePiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev2-group0"
@@ -19,6 +20,7 @@
             "DataNormalizationPiece",
             "DataPreprocessingPiece",
             "ModelDeciderPiece",
+            "EvaluateMLModelPiece",
             "OKTEDataGeneratorPiece"
         ],
         "secrets": [],
