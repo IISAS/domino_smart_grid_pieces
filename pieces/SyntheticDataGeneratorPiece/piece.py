@@ -8,7 +8,7 @@ import json
 
 from domino.base_piece import BasePiece
 
-from .models import InputModel, OutputModel
+from .models import DATASET_DEFAULT_TARGET, InputModel, OutputModel
 
 RecordFactory = Callable[[datetime], dict[str, Any]]
 
@@ -86,9 +86,12 @@ def _shmu_record(ts: datetime) -> dict[str, Any]:
     }
 
 
-def _okte_record(ts: datetime) -> dict[str, Any]:
+def _okte_record(ts: datetime, tz_offset_hours: float = 1.0) -> dict[str, Any]:
+    local_ts = ts + timedelta(hours=tz_offset_hours)
+    
     return {
-        "timestamp_utc": ts.isoformat(),
+        "Date": local_ts.strftime("%d.%m.%Y"),
+        "Time": local_ts.strftime("%H:%M"),
         "market_area": "SK",
         "imbalance_mw": round(random.uniform(-280, 260), 3),
         "spot_price_eur_mwh": round(random.uniform(25, 220), 2),
@@ -235,7 +238,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
                 if dataset_type == "shmu":
                     return _shmu_record(ts)
                 if dataset_type == "okte":
-                    return _okte_record(ts)
+                    return _okte_record(ts, tz_offset_hours=tz_offset_hours)
                 if dataset_type == "battery":
                     return _battery_record(ts)
                 return _machine_record(ts)
@@ -298,6 +301,7 @@ class SyntheticDataGeneratorPiece(BasePiece):
 
             return OutputModel(
                 file_path=file_path,
+                target_column=DATASET_DEFAULT_TARGET.get(dataset_type),
             )
         except Exception:
             self.logger.exception(

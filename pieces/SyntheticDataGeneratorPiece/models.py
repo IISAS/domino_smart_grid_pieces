@@ -126,5 +126,20 @@ class InputModel(BaseModel):
         return self.model_dump(mode="json", exclude_none=True, exclude_unset=True)
 
 
+DATASET_DEFAULT_TARGET: dict[str, str] = {
+    "solargis": "PVOUT",
+    "microstep": "temperature_c",
+    "shmu": "temp_2m_c",
+    "okte": "spot_price_eur_mwh",
+    "battery": "soc_pct",
+    "machine": "power_kw",
+}
+
+
 class OutputModel(BaseModel):
     file_path: Optional[str] = Field(default=None, title="Dataset file path")
+    target_column: Optional[str] = Field(
+        default=None,
+        title="Target column",
+        description="Suggested target column for the generated dataset (pass downstream via fromUpstream).",
+    )

@@ -97,12 +97,15 @@ def test_inference_piece_pvout_correction_stub_model(monkeypatch, tmp_path: Path
 
     assert output_data["message"] is not None
     forecast = output_data["artifacts"]["forecast"]
+    # `target_column` (here `PVOUT`) is appended by build_forecast_table so the saved CSV
+    # contains both prediction and ground truth side-by-side for downstream evaluators.
     assert forecast["columns"] == [
         "datetime",
         "pred_sequence_id",
         "base_forecast",
         "correction",
         "final_forecast",
+        "PVOUT",
     ]
     recs = forecast["inline_records"]
     assert len(recs) == 1
