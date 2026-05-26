@@ -1,6 +1,6 @@
 from domino.base_piece import BasePiece
 
-from .models import InputModel, OutputModel
+from .models import InputModel, ModelSpec, OutputModel
 from .utils.model_decider import MODEL_TYPES, create_model
 
 
@@ -90,12 +90,31 @@ class ElectricityPricePredictionModelTrainPiece(BasePiece):
             model_params=model_params,
             payload=payload,
         )
-        return OutputModel(
-            message="ElectricityPricePredictionModelTrainPiece executed.",
-            model_path=artifacts.get("checkpoint_path"),
+        resolved_data_path = payload.get("data_path") or payload.get("csv_path")
+        model_path = artifacts.get("checkpoint_path")
+        preprocessing_metadata_path = artifacts.get("preprocessing_metadata_path")
+
+        # Typed bundle for one-click upstream binding from InferencePiece.models[i].
+        # `price_level` mode = direct regression with no baseline column.
+        model_spec = ModelSpec(
+            model_id="price",
+            mode="price_level",
+            model_path=model_path,
+            data_path=resolved_data_path,
+            preprocessing_metadata_path=preprocessing_metadata_path,
             feature_columns=list(feature_columns),
             target_column=str(target_column),
-            preprocessing_metadata_path=artifacts.get("preprocessing_metadata_path"),
+            base_forecast_column=None,
+        )
+
+        return OutputModel(
+            message="ElectricityPricePredictionModelTrainPiece executed.",
+            model_path=model_path,
+            feature_columns=list(feature_columns),
+            target_column=str(target_column),
+            preprocessing_metadata_path=preprocessing_metadata_path,
+            data_path=resolved_data_path,
+            model_spec=model_spec,
             artifacts=artifacts,
         )
 

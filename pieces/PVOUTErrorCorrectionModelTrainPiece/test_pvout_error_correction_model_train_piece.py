@@ -79,6 +79,14 @@ def test_pvout_error_correction_model_train_piece_csv_pipeline_all_models(
     assert artifacts["trained_model"]["model_type"] == model_type
     assert artifacts["checkpoint_path"].endswith(".pkl")
 
+    # Typed bundle for one-click upstream binding from InferencePiece.
+    spec = output_data["model_spec"]
+    assert spec is not None
+    assert spec["model_id"] == "pvout_correction"
+    assert spec["mode"] == "pvout_correction"
+    assert spec["model_path"] == output_data["model_path"]
+    assert spec["base_forecast_column"] == "PVOUT"
+
 
 def test_pvout_error_correction_top_level_feature_columns_wiring():
     """

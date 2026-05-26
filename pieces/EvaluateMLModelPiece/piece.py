@@ -37,7 +37,77 @@ def _model_id_for(entry: dict, index: int) -> str:
     return f"model_{index + 1}"
 
 
+def _default_forecast_column_for_mode(mode: str | None) -> str:
+    """Pick a sensible forecast column for a given inference mode.
+
+    - `pvout_correction` adds `correction = model.predict(X)` and writes
+      `final_forecast = base + correction`. With `base_forecast_column=PVOUT`
+      (the truth column), `final_forecast - PVOUT` is just `correction`, so
+      `correction` is the column that measures actual prediction quality.
+    - All other modes (`price_level`, `price_ahead`) put the meaningful
+      prediction in `final_forecast`.
+    """
+    if (mode or "").lower() == "pvout_correction":
+        return "correction"
+    return "final_forecast"
+
+
+def _derive_evaluations_from_forecasts(payload: dict) -> list[dict]:
+    """Auto-build an evaluations list from an upstream `forecasts` bind.
+
+    When `EvaluateMLModelPiece` is wired to `InferencePiece.forecasts` (at the
+    list level), each ForecastEntry carries everything we need — model_id,
+    forecast_csv_path, target_column, mode — to evaluate it without manual
+    per-entry configuration. Any explicit overrides set on the `evaluations`
+    field still take precedence per `model_id`.
+    """
+    forecasts = payload.get("forecasts")
+    if not isinstance(forecasts, list) or not forecasts:
+        return []
+
+    overrides_by_id: dict[str, dict] = {}
+    explicit = payload.get("evaluations") or []
+    if isinstance(explicit, list):
+        for entry in explicit:
+            if not isinstance(entry, dict):
+                continue
+            key = entry.get("model_id")
+            if key:
+                overrides_by_id[str(key)] = dict(entry)
+
+    parent_forecast_column = payload.get("forecast_column")
+    parent_target_column = payload.get("target_column")
+
+    derived: list[dict] = []
+    for index, forecast in enumerate(forecasts):
+        if not isinstance(forecast, dict):
+            continue
+        model_id = forecast.get("model_id") or f"model_{index + 1}"
+        defaults: dict[str, Any] = {
+            "model_id": model_id,
+            "pred_df_path": forecast.get("forecast_csv_path"),
+            "target_column": forecast.get("target_column") or parent_target_column,
+            "forecast_column": (
+                parent_forecast_column
+                or _default_forecast_column_for_mode(forecast.get("mode"))
+            ),
+        }
+        override = overrides_by_id.get(str(model_id), {})
+        # Per-entry override values trump auto-derived defaults.
+        for k, v in override.items():
+            if v is not None and v != "":
+                defaults[k] = v
+        derived.append(defaults)
+    return derived
+
+
 def _normalize_evaluations(payload: dict) -> list[dict]:
+    # Upstream-bound `forecasts` list takes precedence — that's the path the
+    # canonical workflow uses (Inference → Evaluate via a single edge).
+    derived = _derive_evaluations_from_forecasts(payload)
+    if derived:
+        return derived
+
     evaluations = payload.get("evaluations")
     if isinstance(evaluations, list) and evaluations:
         return [dict(entry or {}) for entry in evaluations]

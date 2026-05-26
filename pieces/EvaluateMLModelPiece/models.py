@@ -44,15 +44,43 @@ class EvalSpec(BaseModel):
     )
 
 
+class ForecastBinding(BaseModel):
+    """Structural mirror of `InferencePiece.OutputModel.forecasts[*]`.
+
+    Lets a single upstream edge `EvaluateMLModel.forecasts ← Inference.forecasts`
+    auto-populate per-model evaluations without manual per-entry wiring.
+    """
+
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    model_id: str | None = Field(default=None)
+    model_path: str | None = Field(default=None)
+    mode: str | None = Field(default=None)
+    forecast_csv_path: str | None = Field(default=None)
+    data_path: str | None = Field(default=None)
+    feature_columns: list[str] = Field(default_factory=list)
+    target_column: str | None = Field(default=None)
+
+
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
+    forecasts: list[ForecastBinding] | None = Field(
+        default=None,
+        description=(
+            "Per-model forecast entries — wire in one click from "
+            "`InferencePiece.OutputModel.forecasts`. When provided, this drives "
+            "evaluation: one metrics.json per forecast, with `pred_df_path` / "
+            "`target_column` / `forecast_column` auto-derived from each entry. "
+            "Use the `evaluations` field below only to override specific entries."
+        ),
+    )
     evaluations: list[EvalSpec] | None = Field(
         default=None,
         description=(
-            "Array of evaluation requests to process in one piece run. Each entry "
-            "produces its own metrics.json. When omitted, the scalar fields below are "
-            "used as a single-entry fallback for backward compatibility."
+            "Optional explicit per-entry overrides. Match by `model_id` to the "
+            "forecast entries above. When `forecasts` is not wired, this becomes "
+            "the primary input (legacy single-target mode)."
         ),
     )
     evaluation_option: str = Field(

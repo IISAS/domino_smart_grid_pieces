@@ -1,6 +1,27 @@
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+class ModelSpec(BaseModel):
+    """Typed bundle that matches `InferencePiece.ModelSpec`.
+
+    Exposed as a single typed output so a downstream `InferencePiece.models[i]`
+    entry can bind to one trainer in a single click instead of toggling each
+    field separately. Inference reads the same field names so Domino's UI
+    matches them by name.
+    """
+
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    model_id: str | None = Field(default=None)
+    mode: str | None = Field(default=None)
+    model_path: str | None = Field(default=None)
+    data_path: str | None = Field(default=None)
+    preprocessing_metadata_path: str | None = Field(default=None)
+    feature_columns: list[str] = Field(default_factory=list)
+    target_column: str | None = Field(default=None)
+    base_forecast_column: str | None = Field(default=None)
+
+
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -38,6 +59,8 @@ class InputModel(BaseModel):
 
 
 class OutputModel(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     message: str = Field(description="Human-readable status message.")
     model_path: str | None = Field(
         default=None,
@@ -54,6 +77,15 @@ class OutputModel(BaseModel):
     data_path: str | None = Field(
         default=None,
         description="Echoed input data path (consumable upstream → error-correction trainer / inference).",
+    )
+    model_spec: ModelSpec | None = Field(
+        default=None,
+        description=(
+            "Typed bundle of the per-model fields Inference expects. Wire a single "
+            "`InferencePiece.models[i]` entry to this in one click — `model_path`, "
+            "`data_path`, `feature_columns`, `target_column`, `mode`, and "
+            "`base_forecast_column` are pre-populated with sensible PVOUT defaults."
+        ),
     )
     artifacts: dict = Field(
         default_factory=dict,

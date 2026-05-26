@@ -32,6 +32,15 @@ def test_electricity_price_train_xgb(tmp_path):
     assert output_data["feature_columns"] == ["load_kw"]
     assert output_data["target_column"] == "spot_price_eur_mwh"
 
+    # Typed bundle for one-click upstream binding from InferencePiece.
+    spec = output_data["model_spec"]
+    assert spec is not None
+    assert spec["model_id"] == "price"
+    assert spec["mode"] == "price_level"
+    assert spec["model_path"] == output_data["model_path"]
+    assert spec["target_column"] == "spot_price_eur_mwh"
+    assert spec["feature_columns"] == ["load_kw"]
+
     art = output_data["artifacts"]
     assert "checkpoint_path" in art
     assert "preprocessing_metadata_path" in art

@@ -1,6 +1,6 @@
 from domino.base_piece import BasePiece
 
-from .models import InputModel, OutputModel
+from .models import InputModel, ModelSpec, OutputModel
 from .utils.model_decider import MODEL_TYPES, TrainedModel, train_model
 
 
@@ -183,13 +183,29 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
                     f,
                 )
 
+        resolved_data_path = payload.get("data_path") or payload.get("csv_path")
+
+        # Typed bundle for one-click upstream binding from InferencePiece.models[i].
+        # Points at the CORRECTION checkpoint (not baseline) and configures the
+        # `pvout_correction` mode so InferencePiece does base + correction(X).
+        model_spec = ModelSpec(
+            model_id="pvout_correction",
+            mode="pvout_correction",
+            model_path=checkpoint_path,
+            data_path=resolved_data_path,
+            feature_columns=list(feature_columns),
+            target_column=str(target_column),
+            base_forecast_column=str(target_column),
+        )
+
         return OutputModel(
             message="PVOUTErrorCorrectionModelTrainPiece executed.",
             model_path=checkpoint_path,
             feature_columns=list(feature_columns),
             target_column=str(target_column),
-            data_path=payload.get("data_path") or payload.get("csv_path"),
+            data_path=resolved_data_path,
             baseline_model_path=baseline_model_path,
+            model_spec=model_spec,
             artifacts={
                 "trained_model": serializable_model,
                 "checkpoint_path": checkpoint_path,

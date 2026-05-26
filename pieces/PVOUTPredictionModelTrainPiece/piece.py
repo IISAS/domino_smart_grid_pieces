@@ -1,6 +1,6 @@
 from domino.base_piece import BasePiece
 
-from .models import InputModel, OutputModel
+from .models import InputModel, ModelSpec, OutputModel
 from .utils.model_decider import MODEL_TYPES, create_model
 
 
@@ -89,12 +89,29 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
             model_params=model_params,
             payload=payload,
         )
-        return OutputModel(
-            message="PVOUTPredictionModelTrainPiece executed.",
-            model_path=artifacts.get("checkpoint_path"),
+        resolved_data_path = payload.get("data_path") or payload.get("csv_path")
+        model_path = artifacts.get("checkpoint_path")
+
+        # Typed bundle for one-click upstream binding from InferencePiece.models[i].
+        # Defaults pick the PVOUT correction mode + PVOUT as baseline, which is
+        # the canonical use of this trainer in the dual-target workflow.
+        model_spec = ModelSpec(
+            model_id="pvout",
+            mode="pvout_correction",
+            model_path=model_path,
+            data_path=resolved_data_path,
             feature_columns=list(feature_columns),
             target_column=str(target_column),
-            data_path=payload.get("data_path") or payload.get("csv_path"),
+            base_forecast_column=str(target_column),
+        )
+
+        return OutputModel(
+            message="PVOUTPredictionModelTrainPiece executed.",
+            model_path=model_path,
+            feature_columns=list(feature_columns),
+            target_column=str(target_column),
+            data_path=resolved_data_path,
+            model_spec=model_spec,
             artifacts=artifacts,
         )
 

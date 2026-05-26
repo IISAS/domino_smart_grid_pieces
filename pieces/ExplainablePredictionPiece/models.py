@@ -28,15 +28,43 @@ class ExplainSpec(BaseModel):
     )
 
 
+class ForecastBinding(BaseModel):
+    """Structural mirror of `InferencePiece.OutputModel.forecasts[*]`.
+
+    Lets a single upstream edge `ExplainablePrediction.forecasts ← Inference.forecasts`
+    auto-populate per-model explanations without manual per-entry wiring.
+    """
+
+    model_config = ConfigDict(extra="allow", protected_namespaces=())
+
+    model_id: str | None = Field(default=None)
+    model_path: str | None = Field(default=None)
+    mode: str | None = Field(default=None)
+    forecast_csv_path: str | None = Field(default=None)
+    data_path: str | None = Field(default=None)
+    feature_columns: list[str] = Field(default_factory=list)
+    target_column: str | None = Field(default=None)
+
+
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
+    forecasts: list[ForecastBinding] | None = Field(
+        default=None,
+        description=(
+            "Per-model forecast entries — wire in one click from "
+            "`InferencePiece.OutputModel.forecasts`. When provided, each entry's "
+            "`model_path`, `data_path`, `feature_columns`, `target_column` drive "
+            "the explanation run for that model. Use the `explanations` field "
+            "below only to override specific entries."
+        ),
+    )
     explanations: list[ExplainSpec] | None = Field(
         default=None,
         description=(
-            "Array of explanation requests to process in one piece run. Each entry "
-            "produces its own per-model artifacts. When omitted, the scalar fields "
-            "below are used as a single-entry fallback for backward compatibility."
+            "Optional explicit per-entry overrides. Match by `model_id` to the "
+            "forecast entries above. When `forecasts` is not wired, this becomes "
+            "the primary input (legacy single-target mode)."
         ),
     )
     explain: bool = Field(default=False, description="Enable explainability run.")

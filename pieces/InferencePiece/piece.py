@@ -143,6 +143,13 @@ class InferencePiece(BasePiece):
                     model_path=stage_payload.get("model_path"),
                     mode=stage_payload.get("mode"),
                     forecast_csv_path=csv_path,
+                    # Echo the INPUT data path so ExplainablePrediction can
+                    # re-feed the same rows to SHAP / LIME from a single edge.
+                    data_path=(
+                        stage_payload.get("data_path")
+                        or entry.get("data_path")
+                        or payload.get("data_path")
+                    ),
                     feature_columns=list(
                         stage_payload.get("feature_columns")
                         or entry.get("feature_columns")

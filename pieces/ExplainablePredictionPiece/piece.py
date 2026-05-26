@@ -44,7 +44,58 @@ def _model_id_for(entry: dict, index: int) -> str:
     return f"model_{index + 1}"
 
 
+def _derive_explanations_from_forecasts(payload: dict) -> list[dict]:
+    """Auto-build an explanations list from an upstream `forecasts` bind.
+
+    When `ExplainablePredictionPiece` is wired to `InferencePiece.forecasts`
+    (at the list level), each ForecastEntry carries `model_path`, `data_path`,
+    `feature_columns`, and `target_column` — everything we need to run SHAP /
+    LIME per model without manual per-entry configuration. Any explicit
+    overrides set on the `explanations` field still take precedence per
+    `model_id`.
+    """
+    forecasts = payload.get("forecasts")
+    if not isinstance(forecasts, list) or not forecasts:
+        return []
+
+    overrides_by_id: dict[str, dict] = {}
+    explicit = payload.get("explanations") or []
+    if isinstance(explicit, list):
+        for entry in explicit:
+            if not isinstance(entry, dict):
+                continue
+            key = entry.get("model_id")
+            if key:
+                overrides_by_id[str(key)] = dict(entry)
+
+    derived: list[dict] = []
+    for index, forecast in enumerate(forecasts):
+        if not isinstance(forecast, dict):
+            continue
+        model_id = forecast.get("model_id") or f"model_{index + 1}"
+        defaults: dict[str, Any] = {
+            "model_id": model_id,
+            "model_path": forecast.get("model_path"),
+            "data_path": forecast.get("data_path"),
+            "feature_columns": list(forecast.get("feature_columns") or []),
+            "target_column": forecast.get("target_column"),
+            "explain": True,
+        }
+        override = overrides_by_id.get(str(model_id), {})
+        for k, v in override.items():
+            if v is not None and v != "":
+                defaults[k] = v
+        derived.append(defaults)
+    return derived
+
+
 def _normalize_explanations(payload: dict) -> list[dict]:
+    # Upstream-bound `forecasts` list takes precedence — that's the canonical
+    # path (Inference → Explainable via a single edge).
+    derived = _derive_explanations_from_forecasts(payload)
+    if derived:
+        return derived
+
     explanations = payload.get("explanations")
     if isinstance(explanations, list) and explanations:
         return [dict(entry or {}) for entry in explanations]

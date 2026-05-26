@@ -124,6 +124,14 @@ class ForecastEntry(BaseModel):
         default=None,
         description="Path to forecast CSV for this model (consumable by EvaluateMLModel / aggregator).",
     )
+    data_path: str | None = Field(
+        default=None,
+        description=(
+            "Path to the INPUT dataset used to generate this forecast — i.e. the "
+            "data passed to `model.predict()`. Required by ExplainablePrediction so "
+            "it can re-feed the same rows to SHAP / LIME from a single edge."
+        ),
+    )
     feature_columns: list[str] = Field(default_factory=list)
     target_column: str | None = Field(default=None)
 
