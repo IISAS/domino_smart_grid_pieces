@@ -53,7 +53,7 @@ def load_model_object(payload: dict) -> Any:
     model_path = Path(payload["model_path"])
     suffix = model_path.suffix.lower()
 
-    if suffix == ".pkl":
+    if suffix in {".pkl", ".joblib"}:
         import joblib
 
         obj = joblib.load(model_path)

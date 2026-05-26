@@ -598,5 +598,9 @@ class ElectricityPricePredictionModelTrainPiece(BasePiece):
 
         return OutputModel(
             message="Electricity price XGBoost regressor trained and saved.",
+            model_path=model_path,
+            feature_columns=feature_columns,
+            target_column=target_column,
+            preprocessing_metadata_path=metadata_path,
             artifacts=artifacts,
         )

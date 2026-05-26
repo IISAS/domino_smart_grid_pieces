@@ -34,6 +34,22 @@ class InputModel(BaseModel):
 
 class OutputModel(BaseModel):
     message: str = Field(description="Human-readable status message.")
+    model_path: str | None = Field(
+        default=None,
+        description="Path to saved model file (consumable upstream → inference.model_path).",
+    )
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        description="Feature columns used at training time (consumable upstream → inference.feature_columns).",
+    )
+    target_column: str = Field(
+        default="price_eur_mwh",
+        description="Target column used at training time.",
+    )
+    preprocessing_metadata_path: str | None = Field(
+        default=None,
+        description="Path to preprocessing_metadata.json (consumable upstream → inference.preprocessing_metadata_path).",
+    )
     artifacts: dict = Field(
         default_factory=dict,
         description=(
