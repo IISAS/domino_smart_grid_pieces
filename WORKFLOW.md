@@ -240,6 +240,7 @@ The piece transparently explains whichever model Inference used — baseline (Sh
   docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group0
   docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1
   docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group2
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group3
   ```
 - Domino piece repository refreshed to the latest `dev-3` release so the DAG points at current images and exposes the latest typed fields.
 - The chain has exactly one edge between consecutive pieces. The only fan-out is Inference → {Evaluate, Explainable}.

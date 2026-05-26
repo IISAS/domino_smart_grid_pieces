@@ -1442,7 +1442,7 @@
         "name": "ExplainablePredictionPiece",
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
+            "requirements_file": "requirements_3.txt"
         },
         "tags": [
             "Template",
