@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,10 @@ def test_forecast_aggregator_piece_smoke():
 
 
 def test_forecast_aggregator_joins_two_models(tmp_path: Path):
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Host tmp_path is not visible inside the piece container during HTTP dry-run."
+        )
     try:
         import pandas as pd
     except ImportError:
@@ -56,6 +61,10 @@ def test_forecast_aggregator_joins_two_models(tmp_path: Path):
 
 
 def test_forecast_aggregator_adds_actual_column(tmp_path: Path):
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Host tmp_path is not visible inside the piece container during HTTP dry-run."
+        )
     try:
         import pandas as pd
     except ImportError:
