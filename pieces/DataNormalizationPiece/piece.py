@@ -105,7 +105,7 @@ class DataNormalizationPiece(BasePiece):
         df = payload.get("dataframe") or payload.get("X") or payload.get("data")
         data_path = payload.get("data_path")
         normalization_type = payload.get("type") or payload.get("normalization_type")
-        features = payload.get("feature_columns") or payload.get("features")
+        features = payload.get("features")
 
         if isinstance(features, str):
             features = [features]
@@ -127,7 +127,7 @@ class DataNormalizationPiece(BasePiece):
         # pieces can plumb `data_path` consistently.
         if normalization_type is None or str(normalization_type).lower() == "none":
             df_out = df
-            applied_features = features if features else list(getattr(df_out, "columns", []))
+            applied_features = list(getattr(df_out, "columns", []))
             artifacts = {
                 "normalized_data": _to_serializable_dataframe_like(df_out),
                 "normalization_type": "none",

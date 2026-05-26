@@ -4,7 +4,7 @@
 # Example:
 # DataPreprocessingPiece
 
-SyntheticDataGenerationPiece
+SyntheticDataGeneratorPiece
 # DataNormalizationPiece
 # ElectricityPricePredictionModelTrainPiece
 EvaluateMLModelPiece
