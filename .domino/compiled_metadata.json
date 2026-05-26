@@ -250,8 +250,34 @@
                         }
                     ],
                     "default": null,
-                    "description": "Optional input data path.",
+                    "description": "Single-source input path (back-compat alias for `data_path_solargis`). Use the more specific `data_path_solargis` / `data_path_okte` fields below to merge Solargis + OKTE datasets into one preprocessed CSV.",
                     "title": "Data Path"
+                },
+                "data_path_solargis": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to Solargis-style CSV (weather / PVOUT). Wire upstream from `SyntheticDataGeneratorPiece.File Path`.",
+                    "title": "Data Path Solargis"
+                },
+                "data_path_okte": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to OKTE-style CSV (electricity market). Wire upstream from `OKTEDataGeneratorPiece.File Path`. When both Solargis and OKTE paths are provided, the piece inner-joins them on `datetime` and emits one merged dataset with all features.",
+                    "title": "Data Path Okte"
                 },
                 "save_data_path": {
                     "anyOf": [
