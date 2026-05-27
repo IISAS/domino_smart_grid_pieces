@@ -43,6 +43,10 @@ def test_evaluate_auto_derives_evaluations_from_forecasts_list(tmp_path):
     `target_column`, and `forecast_column` should be auto-derived — no
     per-entry literal strings required.
     """
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Host tmp_path fixtures aren't visible inside the dry-run container."
+        )
     import csv
 
     # Two tiny forecast CSVs, one per model, with predictions vs truth columns
@@ -106,6 +110,10 @@ def test_evaluate_auto_derives_evaluations_from_forecasts_list(tmp_path):
 def test_evaluate_overrides_take_precedence_over_forecast_defaults(tmp_path):
     """When `evaluations` contains an override matching `model_id`, the
     override fields replace auto-derived defaults from the forecast bind."""
+    if os.environ.get("PIECES_IMAGES_MAP"):
+        pytest.skip(
+            "Host tmp_path fixtures aren't visible inside the dry-run container."
+        )
     import csv
 
     csv_path = tmp_path / "forecast_pvout.csv"
