@@ -14,17 +14,6 @@ _INHERITED_KEYS = (
     "explain_method",
     "explainability",
     "use_diagnostic_loss",
-    "model_path",
-    "data_path",
-    "feature_columns",
-    "target_column",
-    "csv_path",
-    "tabular_data",
-    "dataframe",
-    "model",
-    "trained_model",
-    "eval_data",
-    "X_y",
     "mode",
 )
 
@@ -189,10 +178,9 @@ class ExplainablePredictionPiece(BasePiece):
 
         entries = _normalize_explanations(payload)
         if not entries:
-            artifacts = _run_single_explanation(payload)
             return OutputModel(
-                message="ExplainablePredictionPiece executed.",
-                artifacts=artifacts,
+                message="ExplainablePredictionPiece executed (no-op).",
+                artifacts={"input_payload": payload},
             )
 
         per_model: dict[str, dict] = {}

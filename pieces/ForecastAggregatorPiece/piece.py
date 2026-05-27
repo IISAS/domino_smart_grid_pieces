@@ -62,12 +62,11 @@ class ForecastAggregatorPiece(BasePiece):
             payload.get("output_csv_name") or "aggregated_forecast.csv"
         )
 
-        target_column = payload.get("target_column")
-        if not target_column:
-            for entry in forecasts_input:
-                if entry.get("target_column"):
-                    target_column = entry["target_column"]
-                    break
+        target_column = None
+        for entry in forecasts_input:
+            if entry.get("target_column"):
+                target_column = entry["target_column"]
+                break
 
         merged: "pd.DataFrame | None" = None
         used_ids: set[str] = set()

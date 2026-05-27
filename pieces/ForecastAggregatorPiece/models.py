@@ -38,14 +38,8 @@ class InputModel(BaseModel):
         default=None,
         description=(
             "Optional CSV containing the ground-truth target column "
-            "(e.g. preprocessed dataset). When supplied, an `actual_<target>` column is added."
-        ),
-    )
-    target_column: str | None = Field(
-        default=None,
-        description=(
-            "Target column to look up in `actual_csv_path`. Falls back to the first "
-            "forecast entry's `target_column` when omitted."
+            "(e.g. preprocessed dataset). When supplied, an `actual_<target>` column is added. "
+            "The target column name is taken from the first forecast entry's `target_column`."
         ),
     )
     datetime_column: str = Field(

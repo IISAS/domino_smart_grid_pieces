@@ -76,27 +76,6 @@ class InputModel(BaseModel):
         default=False, description="Enable diagnostic heatmap artifacts."
     )
 
-    model_path: str | None = Field(
-        default=None,
-        description=(
-            "Path to a trained model checkpoint produced by an upstream trainer "
-            "(consumed from `PVOUTPredictionModelTrainPiece.model_path` or "
-            "`PVOUTErrorCorrectionModelTrainPiece.model_path`)."
-        ),
-    )
-    data_path: str | None = Field(
-        default=None,
-        description="Path to input CSV/parquet used as the explanation dataset.",
-    )
-    feature_columns: list[str] = Field(
-        default_factory=list,
-        description="Feature columns the model expects (from preprocessor/trainer).",
-    )
-    target_column: str | None = Field(
-        default=None,
-        description="Optional target column name (informational; not required).",
-    )
-
     @model_validator(mode="before")
     @classmethod
     def _unwrap_payload(cls, data):

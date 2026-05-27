@@ -11,33 +11,25 @@ def test_explainable_prediction_piece_smoke():
     assert output_data["message"] is not None
 
 
-def test_explainable_prediction_piece_explain_missing_model_or_data_raises():
-    if os.environ.get("PIECES_IMAGES_MAP"):
-        pytest.skip("Skipping expected-exception assertion in HTTP dry-run mode.")
-    with pytest.raises(
-        ValueError,
-        match=r"Explainability requires payload\['model'\] and payload\['data'\]",
-    ):
-        piece_dry_run(
-            "ExplainablePredictionPiece",
-            {
-                "payload": {
-                    "explain": True,
-                    "explain_method": "shap",
-                    "explainability": {"mode": "regression"},
-                    # model + data intentionally omitted
-                }
-            },
-        )
-
-
 def test_explainable_prediction_piece_diagnostic_skips_without_diagnostic_payload():
+    """`use_diagnostic_loss=True` flows from the top-level toggle into each
+    forecast entry; with no diagnostic payload available the per-model run
+    records a `skipped` status instead of crashing."""
     output_data = piece_dry_run(
         "ExplainablePredictionPiece",
-        {"payload": {"use_diagnostic_loss": True}},
+        {
+            "payload": {
+                "use_diagnostic_loss": True,
+                "forecasts": [{"model_id": "diag_only"}],
+                # Override the auto-derived `explain=True` so the entry runs
+                # diagnostics-only and doesn't trip the "missing model+data" guard.
+                "explanations": [{"model_id": "diag_only", "explain": False}],
+            }
+        },
     )
-    assert "diagnostic_heatmaps" in output_data["artifacts"]
-    assert output_data["artifacts"]["diagnostic_heatmaps"]["status"] == "skipped"
+    per_model = output_data["artifacts"]["per_model"]
+    assert "diag_only" in per_model
+    assert per_model["diag_only"]["diagnostic_heatmaps"]["status"] == "skipped"
 
 
 def test_explainable_auto_derives_explanations_from_forecasts_list():

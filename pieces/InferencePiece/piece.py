@@ -45,27 +45,21 @@ def _model_id_for(entry: dict, index: int) -> str:
 
 
 def _normalize_models(payload: dict) -> list[dict]:
-    """Return a list of per-model dicts. Falls back to a single scalar entry."""
-    models = payload.get("models")
-    if isinstance(models, list) and models:
-        return [dict(entry or {}) for entry in models]
-    scalar_keys = (
-        "mode",
-        "model_path",
-        "data_path",
-        "feature_columns",
-        "target_column",
-        "base_forecast_column",
-        "datetime_column",
-        "horizon_column",
-        "max_horizon",
-        "stages",
-        "preprocessing_metadata_path",
-    )
-    scalar = {k: payload[k] for k in scalar_keys if k in payload and payload[k] is not None}
-    if not scalar.get("mode") and not scalar.get("stages"):
-        return []
-    return [scalar]
+    """Return per-model dicts from the two named slots (`pvout_model`, `price_model`).
+
+    Each slot's `model_id` defaults to the slot name so downstream pieces
+    (EvaluateMLModelPiece auto-derivation, ForecastAggregatorPiece column suffix)
+    can match by stable identifier without per-workflow configuration.
+    """
+    entries: list[dict] = []
+    for slot in ("pvout_model", "price_model"):
+        entry = payload.get(slot)
+        if not isinstance(entry, dict) or not entry:
+            continue
+        entry = dict(entry)
+        entry.setdefault("model_id", slot.removesuffix("_model"))
+        entries.append(entry)
+    return entries
 
 
 def _stage_payload_for(entry: dict, parent: dict) -> dict:
@@ -75,8 +69,6 @@ def _stage_payload_for(entry: dict, parent: dict) -> dict:
         if key in parent and parent[key] is not None:
             stage[key] = parent[key]
     stage.update({k: v for k, v in entry.items() if v is not None})
-    if "data_path" not in stage and parent.get("data_path") is not None:
-        stage["data_path"] = parent["data_path"]
     return stage
 
 
@@ -93,16 +85,8 @@ class InferencePiece(BasePiece):
 
         entries = _normalize_models(payload)
         if not entries:
-            echo_model_path = payload.get("model_path")
-            echo_data_path = payload.get("data_path")
-            echo_feature_columns = list(payload.get("feature_columns") or [])
-            echo_target_column = str(payload.get("target_column") or "PVOUT")
             return OutputModel(
                 message="InferencePiece executed (no-op).",
-                model_path=echo_model_path,
-                data_path=echo_data_path,
-                feature_columns=echo_feature_columns,
-                target_column=echo_target_column,
                 artifacts={"input_payload": payload},
             )
 
@@ -146,9 +130,7 @@ class InferencePiece(BasePiece):
                     # Echo the INPUT data path so ExplainablePrediction can
                     # re-feed the same rows to SHAP / LIME from a single edge.
                     data_path=(
-                        stage_payload.get("data_path")
-                        or entry.get("data_path")
-                        or payload.get("data_path")
+                        stage_payload.get("data_path") or entry.get("data_path")
                     ),
                     feature_columns=list(
                         stage_payload.get("feature_columns")
@@ -180,9 +162,9 @@ class InferencePiece(BasePiece):
             forecasts=forecast_entries,
             forecast_csv_path=head_csv,
             model_path=head.model_path,
-            data_path=payload.get("data_path"),
+            data_path=head.data_path,
             feature_columns=head.feature_columns,
-            target_column=str(head.target_column or payload.get("target_column") or "PVOUT"),
+            target_column=str(head.target_column or "PVOUT"),
             artifacts={
                 "per_model": per_model_artifacts,
                 # Back-compat: surface the first model's artifacts at the top level so

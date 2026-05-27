@@ -12,13 +12,6 @@ _INHERITED_KEYS = (
     "evaluation_option",
     "baseline_id",
     "plot",
-    "forecast_column",
-    "target_column",
-    "pred_df_path",
-    "true_baseline_df_path",
-    "pred_df",
-    "true_baseline_df",
-    "y_true",
 )
 
 
@@ -75,9 +68,6 @@ def _derive_evaluations_from_forecasts(payload: dict) -> list[dict]:
             if key:
                 overrides_by_id[str(key)] = dict(entry)
 
-    parent_forecast_column = payload.get("forecast_column")
-    parent_target_column = payload.get("target_column")
-
     derived: list[dict] = []
     for index, forecast in enumerate(forecasts):
         if not isinstance(forecast, dict):
@@ -86,11 +76,8 @@ def _derive_evaluations_from_forecasts(payload: dict) -> list[dict]:
         defaults: dict[str, Any] = {
             "model_id": model_id,
             "pred_df_path": forecast.get("forecast_csv_path"),
-            "target_column": forecast.get("target_column") or parent_target_column,
-            "forecast_column": (
-                parent_forecast_column
-                or _default_forecast_column_for_mode(forecast.get("mode"))
-            ),
+            "target_column": forecast.get("target_column"),
+            "forecast_column": _default_forecast_column_for_mode(forecast.get("mode")),
         }
         override = overrides_by_id.get(str(model_id), {})
         # Per-entry override values trump auto-derived defaults.
@@ -111,13 +98,7 @@ def _normalize_evaluations(payload: dict) -> list[dict]:
     evaluations = payload.get("evaluations")
     if isinstance(evaluations, list) and evaluations:
         return [dict(entry or {}) for entry in evaluations]
-    scalar = {k: payload[k] for k in _INHERITED_KEYS if k in payload and payload[k] is not None}
-    has_pred = any(
-        scalar.get(k) is not None for k in ("pred_df", "pred_df_path")
-    )
-    if not has_pred:
-        return []
-    return [scalar]
+    return []
 
 
 def _entry_payload_for(entry: dict, parent: dict) -> dict:
@@ -237,10 +218,6 @@ class EvaluateMLModelPiece(BasePiece):
 
         entries = _normalize_evaluations(payload)
         if not entries:
-            # Preserve the original error wording (and tests) when nothing was supplied.
-            entry_payload = {k: payload[k] for k in _INHERITED_KEYS if k in payload}
-            _run_single_evaluation(entry_payload)
-            # _run_single_evaluation raises before returning when pred_df is missing.
             return OutputModel(
                 message="EvaluateMLModelPiece executed (no-op).",
                 artifacts={"input_payload": payload},

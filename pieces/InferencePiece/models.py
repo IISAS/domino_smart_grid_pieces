@@ -4,9 +4,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class ModelSpec(BaseModel):
     """One trained-model entry consumed by InferencePiece.
 
-    A pipeline can wire several trainers into one Inference node by exposing
-    them as a list of ModelSpec entries. Each entry is self-contained: it
-    can override datetime/horizon columns, schema-strictness, etc.
+    The canonical workflow exposes two named slots (`pvout_model`, `price_model`)
+    on `InferencePiece.InputModel`. Each binds in one click to the matching
+    trainer's `model_spec` output. Top-level fields like `datetime_column` are
+    inherited into each entry at runtime.
     """
 
     model_config = ConfigDict(extra="allow", protected_namespaces=())
@@ -14,7 +15,7 @@ class ModelSpec(BaseModel):
     model_id: str | None = Field(
         default=None,
         description="Stable identifier for this model (used in forecast filenames and per-model artifacts). "
-        "Falls back to the basename of `model_path` when omitted.",
+        "Falls back to the slot name (`pvout` / `price`) when omitted.",
     )
     mode: str | None = Field(
         default=None,
@@ -58,42 +59,34 @@ class ModelSpec(BaseModel):
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
-    models: list[ModelSpec] | None = Field(
+    pvout_model: ModelSpec | None = Field(
         default=None,
         description=(
-            "Array of trained models to evaluate in one Inference run. Each entry "
-            "produces its own forecast CSV. When omitted, the scalar fields below are "
-            "used as a single-entry fallback for backward compatibility."
+            "PVOUT-side model bundle. Wire in one click from "
+            "`PVOUTErrorCorrectionModelTrainPiece.model_spec` (or any trainer "
+            "exposing a matching `model_spec`). Typically `mode=pvout_correction` "
+            "with `base_forecast_column=PVOUT`."
         ),
     )
-    mode: str | None = Field(
+    price_model: ModelSpec | None = Field(
         default=None,
-        description="Inference mode: `pvout_correction`, `price_ahead`, `price_level`.",
-    )
-    model_path: str | None = Field(default=None, description="Model artifact path.")
-    data_path: str | None = Field(
-        default=None,
-        description="Path to input CSV (e.g. from preprocessor/normalization).",
-    )
-    feature_columns: list[str] = Field(
-        default_factory=list,
-        description="Feature columns the model expects (from preprocessor/decider/trainer).",
-    )
-    target_column: str | None = Field(
-        default=None,
-        description="Target column name (for downstream metrics/aggregation).",
+        description=(
+            "Price-side model bundle. Wire in one click from "
+            "`ElectricityPricePredictionModelTrainPiece.model_spec`. Typically "
+            "`mode=price_level` or `price_ahead`."
+        ),
     )
     datetime_column: str | None = Field(
-        default=None, description="Datetime column name."
-    )
-    base_forecast_column: str | None = Field(
-        default=None, description="Baseline forecast column name."
+        default=None,
+        description="Datetime column name shared by both models (inherited into each slot when not set per-model).",
     )
     horizon_column: str | None = Field(
-        default=None, description="Horizon/id column name."
+        default=None,
+        description="Horizon/id column name shared by both models (inherited into each slot when not set per-model).",
     )
     max_horizon: int | None = Field(
-        default=None, description="Optional maximum horizon."
+        default=None,
+        description="Optional maximum horizon shared by both models.",
     )
 
     @model_validator(mode="before")
