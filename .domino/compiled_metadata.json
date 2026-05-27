@@ -115,6 +115,107 @@
             "type": "object"
         },
         "output_schema": {
+            "$defs": {
+                "ModelSpec": {
+                    "additionalProperties": true,
+                    "description": "Typed bundle that matches `InferencePiece.ModelSpec`.\n\nExposed as a single typed output so a downstream `InferencePiece.models[i]`\nentry can bind to one trainer in a single click. Defaults pick `price_level`\nmode (no baseline column) and the price target.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "preprocessing_metadata_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Preprocessing Metadata Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        },
+                        "base_forecast_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Base Forecast Column"
+                        }
+                    },
+                    "title": "ModelSpec",
+                    "type": "object"
+                }
+            },
             "properties": {
                 "message": {
                     "description": "Human-readable status message.",
@@ -160,6 +261,31 @@
                     "default": null,
                     "description": "Path to preprocessing_metadata.json (consumable upstream \u2192 inference.preprocessing_metadata_path).",
                     "title": "Preprocessing Metadata Path"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed input data path (consumable upstream \u2192 inference / explainable).",
+                    "title": "Data Path"
+                },
+                "model_spec": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/ModelSpec"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Typed bundle of the per-model fields Inference expects. Wire a single `InferencePiece.models[i]` entry to this in one click \u2014 defaults to `mode=price_level` and `target_column=spot_price_eur_mwh`."
                 },
                 "artifacts": {
                     "description": "Optional outputs (e.g., trained model URI, training metrics).",
@@ -921,6 +1047,107 @@
             "type": "object"
         },
         "output_schema": {
+            "$defs": {
+                "ModelSpec": {
+                    "additionalProperties": true,
+                    "description": "Typed bundle that matches `InferencePiece.ModelSpec`.\n\nExposed as a single typed output so a downstream `InferencePiece.models[i]`\nentry can bind to one trainer in a single click instead of toggling each\nfield separately. Inference reads the same field names so Domino's UI\nmatches them by name.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "preprocessing_metadata_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Preprocessing Metadata Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        },
+                        "base_forecast_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Base Forecast Column"
+                        }
+                    },
+                    "title": "ModelSpec",
+                    "type": "object"
+                }
+            },
             "properties": {
                 "message": {
                     "description": "Human-readable status message.",
@@ -966,6 +1193,18 @@
                     "default": null,
                     "description": "Echoed input data path (consumable upstream \u2192 error-correction trainer / inference).",
                     "title": "Data Path"
+                },
+                "model_spec": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/ModelSpec"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Typed bundle of the per-model fields Inference expects. Wire a single `InferencePiece.models[i]` entry to this in one click \u2014 `model_path`, `data_path`, `feature_columns`, `target_column`, `mode`, and `base_forecast_column` are pre-populated with sensible PVOUT defaults."
                 },
                 "artifacts": {
                     "description": "Optional outputs (e.g., trained model URI, training metrics).",
@@ -1327,10 +1566,113 @@
                     },
                     "title": "EvalSpec",
                     "type": "object"
+                },
+                "ForecastBinding": {
+                    "additionalProperties": true,
+                    "description": "Structural mirror of `InferencePiece.OutputModel.forecasts[*]`.\n\nLets a single upstream edge `EvaluateMLModel.forecasts \u2190 Inference.forecasts`\nauto-populate per-model evaluations without manual per-entry wiring.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "forecast_csv_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Forecast Csv Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        }
+                    },
+                    "title": "ForecastBinding",
+                    "type": "object"
                 }
             },
             "additionalProperties": true,
             "properties": {
+                "forecasts": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ForecastBinding"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Per-model forecast entries \u2014 wire in one click from `InferencePiece.OutputModel.forecasts`. When provided, this drives evaluation: one metrics.json per forecast, with `pred_df_path` / `target_column` / `forecast_column` auto-derived from each entry. Use the `evaluations` field below only to override specific entries.",
+                    "title": "Forecasts"
+                },
                 "evaluations": {
                     "anyOf": [
                         {
@@ -1344,7 +1686,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "Array of evaluation requests to process in one piece run. Each entry produces its own metrics.json. When omitted, the scalar fields below are used as a single-entry fallback for backward compatibility.",
+                    "description": "Optional explicit per-entry overrides. Match by `model_id` to the forecast entries above. When `forecasts` is not wired, this becomes the primary input (legacy single-target mode).",
                     "title": "Evaluations"
                 },
                 "evaluation_option": {
@@ -1866,6 +2208,19 @@
                             "description": "Path to forecast CSV for this model (consumable by EvaluateMLModel / aggregator).",
                             "title": "Forecast Csv Path"
                         },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Path to the INPUT dataset used to generate this forecast \u2014 i.e. the data passed to `model.predict()`. Required by ExplainablePrediction so it can re-feed the same rows to SHAP / LIME from a single edge.",
+                            "title": "Data Path"
+                        },
                         "feature_columns": {
                             "items": {
                                 "type": "string"
@@ -2261,6 +2616,107 @@
             "type": "object"
         },
         "output_schema": {
+            "$defs": {
+                "ModelSpec": {
+                    "additionalProperties": true,
+                    "description": "Typed bundle that matches `InferencePiece.ModelSpec`.\n\nExposed as a single typed output so a downstream `InferencePiece.models[i]`\nentry can bind to one trainer in a single click instead of toggling each\nfield separately. Defaults pick the residual-correction wiring.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "preprocessing_metadata_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Preprocessing Metadata Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        },
+                        "base_forecast_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Base Forecast Column"
+                        }
+                    },
+                    "title": "ModelSpec",
+                    "type": "object"
+                }
+            },
             "properties": {
                 "message": {
                     "description": "Human-readable status message.",
@@ -2319,6 +2775,18 @@
                     "default": null,
                     "description": "Echoed baseline model path (the upstream `model_path` consumed by this piece). Forwarded so staged inference can reach both checkpoints from a single edge.",
                     "title": "Baseline Model Path"
+                },
+                "model_spec": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/$defs/ModelSpec"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Typed bundle of the per-model fields Inference expects. Wire a single `InferencePiece.models[i]` entry to this in one click \u2014 `model_path` points at the *correction* checkpoint, `mode=pvout_correction` with `base_forecast_column=PVOUT`."
                 },
                 "artifacts": {
                     "description": "Optional outputs (e.g., trained corrector URI, evaluation metrics).",
@@ -2485,10 +2953,113 @@
                     },
                     "title": "ExplainSpec",
                     "type": "object"
+                },
+                "ForecastBinding": {
+                    "additionalProperties": true,
+                    "description": "Structural mirror of `InferencePiece.OutputModel.forecasts[*]`.\n\nLets a single upstream edge `ExplainablePrediction.forecasts \u2190 Inference.forecasts`\nauto-populate per-model explanations without manual per-entry wiring.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "forecast_csv_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Forecast Csv Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        }
+                    },
+                    "title": "ForecastBinding",
+                    "type": "object"
                 }
             },
             "additionalProperties": true,
             "properties": {
+                "forecasts": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ForecastBinding"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Per-model forecast entries \u2014 wire in one click from `InferencePiece.OutputModel.forecasts`. When provided, each entry's `model_path`, `data_path`, `feature_columns`, `target_column` drive the explanation run for that model. Use the `explanations` field below only to override specific entries.",
+                    "title": "Forecasts"
+                },
                 "explanations": {
                     "anyOf": [
                         {
@@ -2502,7 +3073,7 @@
                         }
                     ],
                     "default": null,
-                    "description": "Array of explanation requests to process in one piece run. Each entry produces its own per-model artifacts. When omitted, the scalar fields below are used as a single-entry fallback for backward compatibility.",
+                    "description": "Optional explicit per-entry overrides. Match by `model_id` to the forecast entries above. When `forecasts` is not wired, this becomes the primary input (legacy single-target mode).",
                     "title": "Explanations"
                 },
                 "explain": {
