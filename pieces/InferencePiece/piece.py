@@ -47,13 +47,18 @@ def _model_id_for(entry: dict, index: int) -> str:
 def _normalize_models(payload: dict) -> list[dict]:
     """Return per-model dicts from the two named slots (`pvout_model`, `price_model`).
 
-    Each slot's `model_id` defaults to the slot name so downstream pieces
-    (EvaluateMLModelPiece auto-derivation, ForecastAggregatorPiece column suffix)
-    can match by stable identifier without per-workflow configuration.
+    Each slot is a single-element list (Domino UI renders `list[NestedModel]` but
+    not a bare `NestedModel`). We take the first entry of each, defaulting its
+    `model_id` to the slot name so downstream pieces (EvaluateMLModelPiece
+    auto-derivation, ForecastAggregatorPiece column suffix) can match by stable
+    identifier without per-workflow configuration.
     """
     entries: list[dict] = []
     for slot in ("pvout_model", "price_model"):
-        entry = payload.get(slot)
+        slot_value = payload.get(slot)
+        if not isinstance(slot_value, list) or not slot_value:
+            continue
+        entry = slot_value[0]
         if not isinstance(entry, dict) or not entry:
             continue
         entry = dict(entry)

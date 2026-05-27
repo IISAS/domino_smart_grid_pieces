@@ -81,12 +81,12 @@ class OutputModel(BaseModel):
         default=None,
         description="Echoed input data path (consumable upstream → inference / explainable).",
     )
-    model_spec: ModelSpec | None = Field(
+    model_spec: list[ModelSpec] | None = Field(
         default=None,
         description=(
-            "Typed bundle of the per-model fields Inference expects. Wire a single "
-            "`InferencePiece.models[i]` entry to this in one click — defaults to "
-            "`mode=price_level` and `target_column=spot_price_eur_mwh`."
+            "Single-element list mirroring `InferencePiece.price_model` so the entire "
+            "bundle binds in one click (`InferencePiece.price_model ← model_spec`). "
+            "Defaults to `mode=price_level` and `target_column=spot_price_eur_mwh`."
         ),
     )
     artifacts: dict = Field(

@@ -114,7 +114,7 @@ class ElectricityPricePredictionModelTrainPiece(BasePiece):
             target_column=str(target_column),
             preprocessing_metadata_path=preprocessing_metadata_path,
             data_path=resolved_data_path,
-            model_spec=model_spec,
+            model_spec=[model_spec],
             artifacts=artifacts,
         )
 

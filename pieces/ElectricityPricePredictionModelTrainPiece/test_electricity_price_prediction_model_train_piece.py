@@ -32,9 +32,11 @@ def test_electricity_price_train_xgb(tmp_path):
     assert output_data["feature_columns"] == ["load_kw"]
     assert output_data["target_column"] == "spot_price_eur_mwh"
 
-    # Typed bundle for one-click upstream binding from InferencePiece.
-    spec = output_data["model_spec"]
-    assert spec is not None
+    # Typed bundle (single-element list) for one-click upstream binding from
+    # `InferencePiece.price_model`.
+    spec_list = output_data["model_spec"]
+    assert isinstance(spec_list, list) and len(spec_list) == 1
+    spec = spec_list[0]
     assert spec["model_id"] == "price"
     assert spec["mode"] == "price_level"
     assert spec["model_path"] == output_data["model_path"]

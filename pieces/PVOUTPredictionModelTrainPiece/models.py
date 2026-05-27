@@ -78,13 +78,13 @@ class OutputModel(BaseModel):
         default=None,
         description="Echoed input data path (consumable upstream → error-correction trainer / inference).",
     )
-    model_spec: ModelSpec | None = Field(
+    model_spec: list[ModelSpec] | None = Field(
         default=None,
         description=(
-            "Typed bundle of the per-model fields Inference expects. Wire a single "
-            "`InferencePiece.models[i]` entry to this in one click — `model_path`, "
-            "`data_path`, `feature_columns`, `target_column`, `mode`, and "
-            "`base_forecast_column` are pre-populated with sensible PVOUT defaults."
+            "Single-element list mirroring `InferencePiece.pvout_model` so the entire "
+            "bundle binds in one click. `model_path`, `data_path`, `feature_columns`, "
+            "`target_column`, `mode`, and `base_forecast_column` are pre-populated "
+            "with sensible PVOUT-baseline defaults."
         ),
     )
     artifacts: dict = Field(

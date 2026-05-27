@@ -111,7 +111,7 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
             feature_columns=list(feature_columns),
             target_column=str(target_column),
             data_path=resolved_data_path,
-            model_spec=model_spec,
+            model_spec=[model_spec],
             artifacts=artifacts,
         )
 

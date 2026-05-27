@@ -87,12 +87,14 @@ def test_inference_piece_pvout_correction_stub_model(monkeypatch, tmp_path: Path
                 "datetime_column": "datetime",
                 "horizon_column": "pred_sequence_id",
                 "strict_schema": True,
-                "pvout_model": {
-                    "mode": "pvout_correction",
-                    "model_path": dummy_model_path,
-                    "feature_columns": ["f1", "f2"],
-                    "base_forecast_column": "PVOUT",
-                },
+                "pvout_model": [
+                    {
+                        "mode": "pvout_correction",
+                        "model_path": dummy_model_path,
+                        "feature_columns": ["f1", "f2"],
+                        "base_forecast_column": "PVOUT",
+                    }
+                ],
             }
         },
     )
@@ -158,12 +160,14 @@ def test_inference_piece_price_ahead_baseline_from_profile(monkeypatch, tmp_path
                 "horizon_column": "pred_sequence_id",
                 "build_baseline_if_missing": True,
                 "price_profile_path": str(profile_path),
-                "price_model": {
-                    "mode": "price_ahead",
-                    "model_path": dummy_model_path,
-                    "feature_columns": ["a", "b"],
-                    "base_forecast_column": "price_baseline",
-                },
+                "price_model": [
+                    {
+                        "mode": "price_ahead",
+                        "model_path": dummy_model_path,
+                        "feature_columns": ["a", "b"],
+                        "base_forecast_column": "price_baseline",
+                    }
+                ],
             }
         },
     )
@@ -205,11 +209,13 @@ def test_inference_piece_price_level_stub(monkeypatch, tmp_path: Path):
                     ]
                 },
                 "horizon_column": "pred_sequence_id",
-                "price_model": {
-                    "mode": "price_level",
-                    "model_path": dummy_model_path,
-                    "feature_columns": ["load_kw"],
-                },
+                "price_model": [
+                    {
+                        "mode": "price_level",
+                        "model_path": dummy_model_path,
+                        "feature_columns": ["load_kw"],
+                    }
+                ],
             }
         },
     )
@@ -246,15 +252,17 @@ def test_inference_piece_stages_pipeline_single_stage(monkeypatch, tmp_path: Pat
                         }
                     ]
                 },
-                "price_model": {
-                    "stages": [
-                        {
-                            "mode": "price_level",
-                            "model_path": str(tmp_path / "m.joblib"),
-                            "feature_columns": ["f1"],
-                        }
-                    ],
-                },
+                "price_model": [
+                    {
+                        "stages": [
+                            {
+                                "mode": "price_level",
+                                "model_path": str(tmp_path / "m.joblib"),
+                                "feature_columns": ["f1"],
+                            }
+                        ],
+                    }
+                ],
             }
         },
     )

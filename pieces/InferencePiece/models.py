@@ -59,21 +59,21 @@ class ModelSpec(BaseModel):
 class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow", protected_namespaces=())
 
-    pvout_model: ModelSpec | None = Field(
+    pvout_model: list[ModelSpec] | None = Field(
         default=None,
         description=(
-            "PVOUT-side model bundle. Wire in one click from "
-            "`PVOUTErrorCorrectionModelTrainPiece.model_spec` (or any trainer "
-            "exposing a matching `model_spec`). Typically `mode=pvout_correction` "
-            "with `base_forecast_column=PVOUT`."
+            "PVOUT-side model bundle (add a single entry to this card). Per-field "
+            "values can be Upstream-bound from `PVOUTErrorCorrectionModelTrainPiece` "
+            "(`model_path`, `feature_columns`, `target_column`, …). Typically "
+            "`mode=pvout_correction` with `base_forecast_column=PVOUT`."
         ),
     )
-    price_model: ModelSpec | None = Field(
+    price_model: list[ModelSpec] | None = Field(
         default=None,
         description=(
-            "Price-side model bundle. Wire in one click from "
-            "`ElectricityPricePredictionModelTrainPiece.model_spec`. Typically "
-            "`mode=price_level` or `price_ahead`."
+            "Price-side model bundle (add a single entry to this card). Per-field "
+            "values can be Upstream-bound from `ElectricityPricePredictionModelTrainPiece`. "
+            "Typically `mode=price_level` or `price_ahead`."
         ),
     )
     datetime_column: str | None = Field(

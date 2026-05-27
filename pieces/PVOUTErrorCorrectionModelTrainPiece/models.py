@@ -94,13 +94,13 @@ class OutputModel(BaseModel):
             "Forwarded so staged inference can reach both checkpoints from a single edge."
         ),
     )
-    model_spec: ModelSpec | None = Field(
+    model_spec: list[ModelSpec] | None = Field(
         default=None,
         description=(
-            "Typed bundle of the per-model fields Inference expects. Wire a single "
-            "`InferencePiece.models[i]` entry to this in one click — `model_path` "
-            "points at the *correction* checkpoint, `mode=pvout_correction` with "
-            "`base_forecast_column=PVOUT`."
+            "Single-element list mirroring `InferencePiece.pvout_model` so the entire "
+            "bundle binds in one click (`InferencePiece.pvout_model ← model_spec`). "
+            "`model_path` points at the *correction* checkpoint, `mode=pvout_correction` "
+            "with `base_forecast_column=PVOUT`."
         ),
     )
     artifacts: dict = Field(

@@ -1,47 +1,4 @@
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-
-
-class EvalSpec(BaseModel):
-    """One model's evaluation request consumed by EvaluateMLModelPiece."""
-
-    model_config = ConfigDict(extra="allow", protected_namespaces=())
-
-    model_id: str | None = Field(
-        default=None,
-        description="Stable identifier (used in metrics filename). "
-        "Falls back to `pred_df_path` basename / a generated index.",
-    )
-    evaluation_option: str | None = Field(
-        default=None,
-        description="`normal` or `errorcorrection`. Defaults to parent value.",
-    )
-    baseline_id: int | None = Field(default=None, description="Baseline horizon id.")
-    plot: bool | None = Field(default=None, description="Generate plots/heatmaps.")
-    forecast_column: str | None = Field(
-        default=None, description="Predicted-value column."
-    )
-    target_column: str | None = Field(
-        default=None, description="Ground-truth column in pred_df."
-    )
-    pred_df_path: str | None = Field(
-        default=None,
-        description="Path to predictions CSV (typically from InferencePiece forecast).",
-    )
-    true_baseline_df_path: str | None = Field(
-        default=None,
-        description="Path to true-baseline CSV for errorcorrection mode.",
-    )
-    pred_df: Any = Field(
-        default=None, description="Inline predictions payload (JSON object/list/string)."
-    )
-    true_baseline_df: Any = Field(
-        default=None, description="Optional baseline payload (JSON object/list/string)."
-    )
-    y_true: Any = Field(
-        default=None, description="Optional true values (JSON array/string)."
-    )
 
 
 class ForecastBinding(BaseModel):
@@ -69,18 +26,10 @@ class InputModel(BaseModel):
         default=None,
         description=(
             "Per-model forecast entries — wire in one click from "
-            "`InferencePiece.OutputModel.forecasts`. When provided, this drives "
-            "evaluation: one metrics.json per forecast, with `pred_df_path` / "
-            "`target_column` / `forecast_column` auto-derived from each entry. "
-            "Use the `evaluations` field below only to override specific entries."
-        ),
-    )
-    evaluations: list[EvalSpec] | None = Field(
-        default=None,
-        description=(
-            "Optional explicit per-entry overrides. Match by `model_id` to the "
-            "forecast entries above. When `forecasts` is not wired, this becomes "
-            "the primary input (legacy single-target mode)."
+            "`InferencePiece.OutputModel.forecasts`. Drives evaluation: one "
+            "metrics.json per forecast, with `pred_df_path` / `target_column` / "
+            "`forecast_column` auto-derived from each entry (mode-aware: "
+            "`correction` for `pvout_correction`, `final_forecast` otherwise)."
         ),
     )
     evaluation_option: str = Field(

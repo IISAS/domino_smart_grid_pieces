@@ -205,7 +205,7 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
             target_column=str(target_column),
             data_path=resolved_data_path,
             baseline_model_path=baseline_model_path,
-            model_spec=model_spec,
+            model_spec=[model_spec],
             artifacts={
                 "trained_model": serializable_model,
                 "checkpoint_path": checkpoint_path,
