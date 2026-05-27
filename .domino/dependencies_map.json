@@ -2,16 +2,12 @@
     "group0": {
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
+            "requirements_file": "requirements_1.txt"
         },
         "pieces": [
-            "OKTEDataGeneratorPiece",
-            "SyntheticDataGeneratorPiece",
-            "ModelDeciderPiece",
-            "ForecastAggregatorPiece",
-            "DataPreprocessingPiece",
-            "DataNormalizationPiece",
-            "EvaluateMLModelPiece"
+            "ElectricityPricePredictionModelTrainPiece",
+            "InferencePiece",
+            "PVOUTErrorCorrectionModelTrainPiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group0"
@@ -19,10 +15,16 @@
     "group1": {
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_2.txt"
+            "requirements_file": "requirements_0.txt"
         },
         "pieces": [
-            "PVOUTPredictionModelTrainPiece"
+            "DataNormalizationPiece",
+            "DataPreprocessingPiece",
+            "ForecastAggregatorPiece",
+            "ModelDeciderPiece",
+            "EvaluateMLModelPiece",
+            "OKTEDataGeneratorPiece",
+            "SyntheticDataGeneratorPiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1"
@@ -30,10 +32,10 @@
     "group2": {
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_3.txt"
+            "requirements_file": "requirements_2.txt"
         },
         "pieces": [
-            "ExplainablePredictionPiece"
+            "PVOUTPredictionModelTrainPiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group2"
@@ -52,12 +54,10 @@
     "group4": {
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_1.txt"
+            "requirements_file": "requirements_3.txt"
         },
         "pieces": [
-            "InferencePiece",
-            "ElectricityPricePredictionModelTrainPiece",
-            "PVOUTErrorCorrectionModelTrainPiece"
+            "ExplainablePredictionPiece"
         ],
         "secrets": [],
         "source_image": "ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group4"
