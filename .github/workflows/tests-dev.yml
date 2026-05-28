@@ -244,10 +244,30 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
           # Immutable, incrementing dev release (keeps history)
           DEV_TAG="${TAG_PREFIX}-${{ github.run_number }}"
           domino piece release --tag-name="$DEV_TAG" --commit-sha="$commit_sha"
 
           # Moving "latest dev" tag for consumers that always pull `${TAG_PREFIX}`
           domino piece delete-release --tag-name=${TAG_PREFIX} || true
-          domino piece release --tag-name=${TAG_PREFIX} --commit-sha="$commit_sha"
+
+          # GitHub tag/release deletion can be eventually consistent.
+          # Re-creating the same moving tag immediately may intermittently fail.
+          release_created=0
+          for attempt in 1 2 3 4 5; do
+            if domino piece release --tag-name=${TAG_PREFIX} --commit-sha="$commit_sha"; then
+              echo "Created moving tag ${TAG_PREFIX} on attempt $attempt."
+              release_created=1
+              break
+            fi
+            backoff=$((attempt * 10))
+            echo "Creating ${TAG_PREFIX} failed on attempt $attempt; retrying in ${backoff}s..."
+            sleep "$backoff"
+          done
+
+          if [[ "$release_created" -ne 1 ]]; then
+            echo "Failed to create moving tag ${TAG_PREFIX} after retries."
+            exit 1
+          fi
