@@ -107,9 +107,10 @@ def test_pvout_prediction_model_train_piece_all_models(
     spec_list = output_data["model_spec"]
     assert isinstance(spec_list, list) and len(spec_list) == 1
     spec = spec_list[0]
-    assert spec["model_id"] == "pvout"
+    assert spec["model_id"] == "pvout_baseline"
     assert spec["mode"] == "pvout_correction"
     assert spec["model_path"] == output_data["model_path"]
     assert spec["target_column"] == "PVOUT"
     assert spec["base_forecast_column"] == "PVOUT"
     assert "GHI" in spec["feature_columns"]
+    assert spec["preprocessing_metadata_path"] == output_data["preprocessing_metadata_path"]

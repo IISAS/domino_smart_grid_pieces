@@ -98,11 +98,17 @@ def run_inference(payload: dict) -> dict[str, Any]:
     else:
         raise ValueError(f"Unsupported mode '{mode}'")
 
+    # The "truth" column appended to the saved forecast CSV is the model's
+    # `target_column` (e.g. PVOUT for pvout_correction, spot_price_eur_mwh for
+    # price_*). Previously this was conflated with `base_forecast_column`, which
+    # is the *baseline forecast* column — accidentally OK for pvout_correction
+    # (where both happen to be PVOUT) but wrong for every price mode.
+    target_column = payload.get("target_column")
     forecast = build_forecast_table(
         pred_df,
         datetime_column=datetime_column,
         horizon_column=horizon_column,
-        target_column=base_forecast_column,
+        target_column=target_column,
     )
 
     csv_path = serialize_forecast_if_requested(

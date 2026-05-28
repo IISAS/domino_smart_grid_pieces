@@ -322,11 +322,11 @@ Produces `aggregated_forecast.csv` with columns `datetime, pred_sequence_id, pre
 
 - Pull fresh images for every group after CI publishes (one for each `requirements_*.txt`):
   ```
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group0   # numpy+pandas (Synthetic, OKTE, DataPrep, Decider, Norm, Evaluate, Aggregator)
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1   # tabpfn-heavy (PVOUTPredictionModelTrain)
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group2   # xgboost+sklearn+joblib (Inference, ErrorCorrection, ElectricityTrain)
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group3   # PyTorch GPU (TestGpuSupport, optional)
-  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group4   # shap (ExplainablePrediction)
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group0   
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group1   
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group2   
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group3   
+  docker pull ghcr.io/iisas/spice_smart_grid_pieces:dev-3-group4   
   ```
 - `git pull` first so `.domino/dependencies_map.json` matches the latest auto-organize commit; refresh the piece repository in Domino UI afterwards.
 - **DataPreprocessing** has both `Data Path Solargis` and `Data Path Okte` wired (otherwise the merge falls back to a single-source dataset and the other branch's features are missing).

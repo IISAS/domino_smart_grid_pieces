@@ -7,6 +7,7 @@ from .utils.model_decider import MODEL_TYPES, TrainedModel, train_model
 class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
     def piece_function(self, input_data: InputModel):
         import csv
+        import json
         import os
         import pickle
         import tempfile
@@ -185,14 +186,32 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
 
         resolved_data_path = payload.get("data_path") or payload.get("csv_path")
 
-        # Typed bundle for one-click upstream binding from InferencePiece.models[i].
-        # Points at the CORRECTION checkpoint (not baseline) and configures the
-        # `pvout_correction` mode so InferencePiece does base + correction(X).
+        # Persist the trained-model envelope as preprocessing_metadata.json so
+        # downstream Inference can recover `feature_columns_used` / target /
+        # params without re-loading the pickle. Mirrors what the price trainer
+        # writes ([ElectricityPricePredictionModelTrainPiece/piece.py:156-158]).
+        preprocessing_metadata = {
+            "model_type": model_type,
+            "feature_columns": list(feature_columns),
+            "feature_columns_used": list(feature_columns),
+            "target_column": str(target_column),
+            "params": model_params,
+        }
+        preprocessing_metadata_path = os.path.join(
+            checkpoint_dir, "preprocessing_metadata.json"
+        )
+        with open(preprocessing_metadata_path, "w", encoding="utf-8") as f:
+            json.dump(preprocessing_metadata, f, indent=2)
+
+        # Typed bundle for one-click upstream binding from InferencePiece.pvout_model.
+        # `model_id="pvout"` matches the slot name, so forecast filenames stay clean
+        # (`pvout.csv` instead of `pvout_correction.csv`).
         model_spec = ModelSpec(
-            model_id="pvout_correction",
+            model_id="pvout",
             mode="pvout_correction",
             model_path=checkpoint_path,
             data_path=resolved_data_path,
+            preprocessing_metadata_path=preprocessing_metadata_path,
             feature_columns=list(feature_columns),
             target_column=str(target_column),
             base_forecast_column=str(target_column),
@@ -204,11 +223,13 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
             feature_columns=list(feature_columns),
             target_column=str(target_column),
             data_path=resolved_data_path,
+            preprocessing_metadata_path=preprocessing_metadata_path,
             baseline_model_path=baseline_model_path,
             model_spec=[model_spec],
             artifacts={
                 "trained_model": serializable_model,
                 "checkpoint_path": checkpoint_path,
+                "preprocessing_metadata_path": preprocessing_metadata_path,
                 "train_metrics": train_metrics,
             },
         )

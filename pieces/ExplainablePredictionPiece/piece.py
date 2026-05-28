@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -171,6 +172,98 @@ def _run_single_explanation(entry_payload: dict) -> dict[str, Any]:
     return artifacts
 
 
+def _feature_importance_from_explainability(exp: dict) -> list[tuple[str, float]] | None:
+    """Reduce a SHAP or LIME explanation dict to a sorted (feature, importance) list.
+
+    SHAP: mean of |shap_value| across samples per feature.
+    LIME: mean of |weight| across explanations per feature.
+    """
+    method = (exp or {}).get("method")
+    if method == "shap":
+        try:
+            import numpy as np
+
+            values = np.array(exp.get("shap_values") or [])
+            if values.ndim == 1:
+                values = values.reshape(1, -1)
+            if values.size == 0:
+                return None
+            mean_abs = np.abs(values).mean(axis=0)
+            names = exp.get("feature_names") or [
+                f"f{i}" for i in range(mean_abs.shape[0])
+            ]
+            pairs = list(zip(names, mean_abs.tolist()))
+            pairs.sort(key=lambda kv: kv[1], reverse=True)
+            return pairs
+        except Exception:
+            return None
+
+    if method == "lime":
+        totals: dict[str, float] = {}
+        counts: dict[str, int] = {}
+        for record in exp.get("explanations") or []:
+            for feature, weight in record.get("explanation") or []:
+                key = str(feature)
+                totals[key] = totals.get(key, 0.0) + abs(float(weight))
+                counts[key] = counts.get(key, 0) + 1
+        if not totals:
+            return None
+        pairs = [(k, totals[k] / counts[k]) for k in totals]
+        pairs.sort(key=lambda kv: kv[1], reverse=True)
+        return pairs
+
+    return None
+
+
+def _save_explanation_artifacts(
+    model_id: str,
+    exp: dict,
+    results_dir: Path,
+    report_dir: Path | None,
+) -> dict[str, str]:
+    """Persist the explanation dict as JSON and a feature-importance PNG.
+
+    Returns the paths of the files actually written.
+    """
+    written: dict[str, str] = {}
+    results_dir.mkdir(parents=True, exist_ok=True)
+    json_path = results_dir / f"explanation_{model_id}.json"
+    with open(json_path, "w", encoding="utf-8") as fh:
+        json.dump(exp, fh, indent=2, default=str)
+    written["explanation_json_path"] = str(json_path)
+
+    if report_dir is None:
+        return written
+
+    pairs = _feature_importance_from_explainability(exp)
+    if not pairs:
+        return written
+
+    try:
+        import matplotlib
+
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except Exception:
+        return written
+
+    report_dir.mkdir(parents=True, exist_ok=True)
+    top = pairs[:20]
+    labels = [k for k, _ in reversed(top)]
+    values = [v for _, v in reversed(top)]
+
+    fig, ax = plt.subplots(figsize=(8, max(3, 0.35 * len(top))))
+    ax.barh(labels, values)
+    ax.set_xlabel("Mean |attribution|")
+    ax.set_title(f"Feature importance — {model_id} ({exp.get('method', '?')})")
+    fig.tight_layout()
+    png_path = report_dir / f"feature_importance_{model_id}.png"
+    fig.savefig(png_path, dpi=120)
+    plt.close(fig)
+    written["feature_importance_png_path"] = str(png_path)
+    return written
+
+
 class ExplainablePredictionPiece(BasePiece):
     def piece_function(self, input_data: InputModel):
         payload = input_data.payload_as_dict()
@@ -183,9 +276,15 @@ class ExplainablePredictionPiece(BasePiece):
                 artifacts={"input_payload": payload},
             )
 
+        results_dir = Path(self.results_path)
+        # `report_path` exists on the base piece for plot artifacts; fall back
+        # to results_path so the PNG still lands somewhere reachable.
+        report_dir = Path(getattr(self, "report_path", None) or self.results_path)
+
         per_model: dict[str, dict] = {}
         used_ids: set[str] = set()
         head_artifacts: dict[str, Any] | None = None
+        first_png_path: str | None = None
         for index, entry in enumerate(entries):
             base_id = _model_id_for(entry, index)
             model_id = base_id
@@ -197,9 +296,22 @@ class ExplainablePredictionPiece(BasePiece):
 
             entry_payload = _entry_payload_for(entry, payload)
             artifacts = _run_single_explanation(entry_payload)
+
+            explainability = artifacts.get("explainability")
+            if isinstance(explainability, dict):
+                written = _save_explanation_artifacts(
+                    model_id, explainability, results_dir, report_dir
+                )
+                artifacts.update(written)
+                if first_png_path is None:
+                    first_png_path = written.get("feature_importance_png_path")
+
             per_model[model_id] = artifacts
             if head_artifacts is None:
                 head_artifacts = artifacts
+
+        if first_png_path:
+            self.display_result = {"file_type": "png", "file_path": first_png_path}
 
         message = (
             "ExplainablePredictionPiece executed."

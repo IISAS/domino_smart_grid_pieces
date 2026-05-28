@@ -91,15 +91,18 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
         )
         resolved_data_path = payload.get("data_path") or payload.get("csv_path")
         model_path = artifacts.get("checkpoint_path")
+        preprocessing_metadata_path = artifacts.get("preprocessing_metadata_path")
 
-        # Typed bundle for one-click upstream binding from InferencePiece.models[i].
-        # Defaults pick the PVOUT correction mode + PVOUT as baseline, which is
-        # the canonical use of this trainer in the dual-target workflow.
+        # Typed bundle for one-click upstream binding from InferencePiece.pvout_model.
+        # `model_id="pvout_baseline"` disambiguates this baseline checkpoint from the
+        # correction checkpoint emitted by PVOUTErrorCorrectionModelTrainPiece (which
+        # is the canonical pvout_model for the dual-target workflow).
         model_spec = ModelSpec(
-            model_id="pvout",
+            model_id="pvout_baseline",
             mode="pvout_correction",
             model_path=model_path,
             data_path=resolved_data_path,
+            preprocessing_metadata_path=preprocessing_metadata_path,
             feature_columns=list(feature_columns),
             target_column=str(target_column),
             base_forecast_column=str(target_column),
@@ -111,6 +114,7 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
             feature_columns=list(feature_columns),
             target_column=str(target_column),
             data_path=resolved_data_path,
+            preprocessing_metadata_path=preprocessing_metadata_path,
             model_spec=[model_spec],
             artifacts=artifacts,
         )
@@ -124,6 +128,7 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
         model_params: dict,
         payload: dict,
     ) -> dict:
+        import json
         import os
         import pickle
         import tempfile
@@ -139,6 +144,7 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
         trained_model_metadata = {
             "model_type": model_type,
             "feature_columns": feature_columns,
+            "feature_columns_used": feature_columns,
             "target_column": target_column,
             "params": model_params,
         }
@@ -148,8 +154,13 @@ class PVOUTPredictionModelTrainPiece(BasePiece):
                 f,
             )
 
+        meta_path = os.path.join(checkpoint_dir, "preprocessing_metadata.json")
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(trained_model_metadata, f, indent=2)
+
         return {
             "trained_model": trained_model_metadata,
             "checkpoint_path": checkpoint_path,
+            "preprocessing_metadata_path": meta_path,
             "train_metrics": {},
         }

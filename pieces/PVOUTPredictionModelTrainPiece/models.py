@@ -78,6 +78,10 @@ class OutputModel(BaseModel):
         default=None,
         description="Echoed input data path (consumable upstream → error-correction trainer / inference).",
     )
+    preprocessing_metadata_path: str | None = Field(
+        default=None,
+        description="Path to preprocessing_metadata.json (consumable upstream → inference.preprocessing_metadata_path).",
+    )
     model_spec: list[ModelSpec] | None = Field(
         default=None,
         description=(
