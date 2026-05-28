@@ -1185,6 +1185,19 @@
                     "description": "Echoed input data path (consumable upstream \u2192 error-correction trainer / inference).",
                     "title": "Data Path"
                 },
+                "preprocessing_metadata_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to preprocessing_metadata.json (consumable upstream \u2192 inference.preprocessing_metadata_path).",
+                    "title": "Preprocessing Metadata Path"
+                },
                 "model_spec": {
                     "anyOf": [
                         {
@@ -2504,6 +2517,19 @@
                     "default": null,
                     "description": "Echoed input data path (consumable upstream \u2192 inference).",
                     "title": "Data Path"
+                },
+                "preprocessing_metadata_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to preprocessing_metadata.json (consumable upstream \u2192 inference.preprocessing_metadata_path).",
+                    "title": "Preprocessing Metadata Path"
                 },
                 "baseline_model_path": {
                     "anyOf": [
