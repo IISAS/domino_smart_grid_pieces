@@ -5,7 +5,6 @@ import json
 import os
 import csv
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from domino.testing import piece_dry_run
 
@@ -65,11 +64,8 @@ _BASE_INPUT = {
 }
 
 
-def _stub_get(*_args, **_kwargs) -> MagicMock:
-    resp = MagicMock()
-    resp.raise_for_status = MagicMock()
-    resp.json.return_value = _MOCK_RESPONSE_JSON
-    return resp
+def _stub_fetch(*_args, **_kwargs) -> dict:
+    return _MOCK_RESPONSE_JSON
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +75,7 @@ def _stub_get(*_args, **_kwargs) -> MagicMock:
 
 def test_batch_json_output(monkeypatch):
     mod = _load_piece_module()
-    monkeypatch.setattr(mod.requests, "get", _stub_get)
+    monkeypatch.setattr(mod, "_fetch_open_meteo", _stub_fetch)
 
     output_data = piece_dry_run(
         "SolarGISDataGeneratorPiece",
@@ -107,7 +103,7 @@ def test_batch_json_output(monkeypatch):
 
 def test_batch_csv_output(monkeypatch):
     mod = _load_piece_module()
-    monkeypatch.setattr(mod.requests, "get", _stub_get)
+    monkeypatch.setattr(mod, "_fetch_open_meteo", _stub_fetch)
 
     output_data = piece_dry_run(
         "SolarGISDataGeneratorPiece",
@@ -137,7 +133,7 @@ def test_batch_csv_output(monkeypatch):
 
 def test_realtime_stream_mode(monkeypatch):
     mod = _load_piece_module()
-    monkeypatch.setattr(mod.requests, "get", _stub_get)
+    monkeypatch.setattr(mod, "_fetch_open_meteo", _stub_fetch)
 
     output_data = piece_dry_run(
         "SolarGISDataGeneratorPiece",
@@ -151,7 +147,7 @@ def test_realtime_stream_mode(monkeypatch):
 def test_pvout_calculation(monkeypatch):
     """PVOUT = pvout_peak_kw * (GHI / 1000) * 0.75 for each record."""
     mod = _load_piece_module()
-    monkeypatch.setattr(mod.requests, "get", _stub_get)
+    monkeypatch.setattr(mod, "_fetch_open_meteo", _stub_fetch)
 
     output_data = piece_dry_run(
         "SolarGISDataGeneratorPiece",
@@ -170,7 +166,7 @@ def test_pvout_calculation(monkeypatch):
 def test_solar_elevation_at_noon(monkeypatch):
     """Solar elevation at 12:00 in summer at 48°N must be positive."""
     mod = _load_piece_module()
-    monkeypatch.setattr(mod.requests, "get", _stub_get)
+    monkeypatch.setattr(mod, "_fetch_open_meteo", _stub_fetch)
 
     output_data = piece_dry_run("SolarGISDataGeneratorPiece", _BASE_INPUT)
 
@@ -185,7 +181,7 @@ def test_solar_elevation_at_noon(monkeypatch):
 def test_title_cased_output_format_key(monkeypatch):
     """Domino UI may send `Output format` instead of `output_format`."""
     mod = _load_piece_module()
-    monkeypatch.setattr(mod.requests, "get", _stub_get)
+    monkeypatch.setattr(mod, "_fetch_open_meteo", _stub_fetch)
 
     output_data = piece_dry_run(
         "SolarGISDataGeneratorPiece",

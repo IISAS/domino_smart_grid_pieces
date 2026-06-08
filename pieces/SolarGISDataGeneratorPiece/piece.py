@@ -5,8 +5,6 @@ from typing import Any
 from pathlib import Path
 import json
 
-import requests
-
 from domino.base_piece import BasePiece
 
 from .models import (
@@ -74,6 +72,9 @@ def _fetch_open_meteo(
     end_date: str,
     timeout: int = 30,
 ) -> dict[str, Any]:
+    
+    import requests 
+
     params = {
         "latitude": latitude,
         "longitude": longitude,
