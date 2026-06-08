@@ -1,13 +1,33 @@
+from __future__ import annotations
+
+import importlib
 import json
 import os
 import csv
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from domino.testing import piece_dry_run
 
 # ---------------------------------------------------------------------------
-# Shared mock helpers
+# Module loader (same pattern as InferencePiece tests)
+# ---------------------------------------------------------------------------
+
+
+def _load_piece_module():
+    for name in (
+        "SolarGISDataGeneratorPiece.piece",
+        "pieces.SolarGISDataGeneratorPiece.piece",
+    ):
+        try:
+            return importlib.import_module(name)
+        except ModuleNotFoundError:
+            continue
+    raise ModuleNotFoundError("Could not import SolarGISDataGeneratorPiece.piece")
+
+
+# ---------------------------------------------------------------------------
+# Shared mock data
 # ---------------------------------------------------------------------------
 
 _MOCK_HOURLY = {
@@ -37,16 +57,6 @@ _MOCK_RESPONSE_JSON = {
     "hourly": _MOCK_HOURLY,
 }
 
-_PATCH_TARGET = "pieces.SolarGISDataGeneratorPiece.piece.requests.get"
-
-
-def _mock_response(response_json: dict = _MOCK_RESPONSE_JSON) -> MagicMock:
-    resp = MagicMock()
-    resp.raise_for_status = MagicMock()
-    resp.json.return_value = response_json
-    return resp
-
-
 _BASE_INPUT = {
     "latitude": 48.15,
     "longitude": 17.11,
@@ -54,16 +64,27 @@ _BASE_INPUT = {
     "end_date": "2024-06-21",
 }
 
+
+def _stub_get(*_args, **_kwargs) -> MagicMock:
+    resp = MagicMock()
+    resp.raise_for_status = MagicMock()
+    resp.json.return_value = _MOCK_RESPONSE_JSON
+    return resp
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
 
 
-@patch(_PATCH_TARGET)
-def test_batch_json_output(mock_get):
-    mock_get.return_value = _mock_response()
+def test_batch_json_output(monkeypatch):
+    mod = _load_piece_module()
+    monkeypatch.setattr(mod.requests, "get", _stub_get)
 
-    output_data = piece_dry_run("SolarGISDataGeneratorPiece", {**_BASE_INPUT, "output_format": "json"})
+    output_data = piece_dry_run(
+        "SolarGISDataGeneratorPiece",
+        {**_BASE_INPUT, "output_format": "json"},
+    )
 
     file_path = output_data["file_path"]
     assert file_path is not None
@@ -76,17 +97,22 @@ def test_batch_json_output(mock_get):
     records = json.loads(Path(file_path).read_text(encoding="utf-8"))
     assert len(records) == 5
     first = records[0]
-    for col in ("GHI", "DNI", "DIF", "GTI", "SE", "SA", "PVOUT", "TEMP", "WS", "WG", "WD", "RH", "AP", "PVOUT_UNC_LOW", "PVOUT_UNC_HIGH"):
+    for col in ("GHI", "DNI", "DIF", "GTI", "SE", "SA", "PVOUT",
+                "TEMP", "WS", "WG", "WD", "RH", "AP",
+                "PVOUT_UNC_LOW", "PVOUT_UNC_HIGH"):
         assert col in first, f"Missing column: {col}"
     assert first["GHI"] == 600.0
     assert first["PVOUT_UNC_LOW"] <= first["PVOUT"] <= first["PVOUT_UNC_HIGH"]
 
 
-@patch(_PATCH_TARGET)
-def test_batch_csv_output(mock_get):
-    mock_get.return_value = _mock_response()
+def test_batch_csv_output(monkeypatch):
+    mod = _load_piece_module()
+    monkeypatch.setattr(mod.requests, "get", _stub_get)
 
-    output_data = piece_dry_run("SolarGISDataGeneratorPiece", {**_BASE_INPUT, "output_format": "csv"})
+    output_data = piece_dry_run(
+        "SolarGISDataGeneratorPiece",
+        {**_BASE_INPUT, "output_format": "csv"},
+    )
 
     file_path = output_data["file_path"]
     assert file_path is not None
@@ -109,22 +135,28 @@ def test_batch_csv_output(mock_get):
         ]
 
 
-@patch(_PATCH_TARGET)
-def test_realtime_stream_mode(mock_get):
-    mock_get.return_value = _mock_response()
+def test_realtime_stream_mode(monkeypatch):
+    mod = _load_piece_module()
+    monkeypatch.setattr(mod.requests, "get", _stub_get)
 
-    output_data = piece_dry_run("SolarGISDataGeneratorPiece", {**_BASE_INPUT, "output_mode": "realtime_stream"})
+    output_data = piece_dry_run(
+        "SolarGISDataGeneratorPiece",
+        {**_BASE_INPUT, "output_mode": "realtime_stream"},
+    )
 
     assert output_data["file_path"] is not None
     assert "stream" in output_data["file_path"]
 
 
-@patch(_PATCH_TARGET)
-def test_pvout_calculation(mock_get):
+def test_pvout_calculation(monkeypatch):
     """PVOUT = pvout_peak_kw * (GHI / 1000) * 0.75 for each record."""
-    mock_get.return_value = _mock_response()
+    mod = _load_piece_module()
+    monkeypatch.setattr(mod.requests, "get", _stub_get)
 
-    output_data = piece_dry_run("SolarGISDataGeneratorPiece", {**_BASE_INPUT, "pvout_peak_kw": 10.0})
+    output_data = piece_dry_run(
+        "SolarGISDataGeneratorPiece",
+        {**_BASE_INPUT, "pvout_peak_kw": 10.0},
+    )
 
     if os.environ.get("PIECES_IMAGES_MAP"):
         return
@@ -135,10 +167,10 @@ def test_pvout_calculation(mock_get):
         assert record["PVOUT"] == expected, f"Expected PVOUT={expected}, got {record['PVOUT']}"
 
 
-@patch(_PATCH_TARGET)
-def test_solar_elevation_at_noon(mock_get):
+def test_solar_elevation_at_noon(monkeypatch):
     """Solar elevation at 12:00 in summer at 48°N must be positive."""
-    mock_get.return_value = _mock_response()
+    mod = _load_piece_module()
+    monkeypatch.setattr(mod.requests, "get", _stub_get)
 
     output_data = piece_dry_run("SolarGISDataGeneratorPiece", _BASE_INPUT)
 
@@ -150,10 +182,10 @@ def test_solar_elevation_at_noon(mock_get):
     assert noon["SE"] > 0.0
 
 
-@patch(_PATCH_TARGET)
-def test_title_cased_output_format_key(mock_get):
+def test_title_cased_output_format_key(monkeypatch):
     """Domino UI may send `Output format` instead of `output_format`."""
-    mock_get.return_value = _mock_response()
+    mod = _load_piece_module()
+    monkeypatch.setattr(mod.requests, "get", _stub_get)
 
     output_data = piece_dry_run(
         "SolarGISDataGeneratorPiece",
