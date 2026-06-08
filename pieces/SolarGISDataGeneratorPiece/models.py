@@ -36,25 +36,21 @@ class InputModel(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     latitude: float = Field(
-        ...,
         default=48.15,
         title="Latitude",
         description="Location latitude in decimal degrees (e.g. 48.15 for Bratislava).",
     )
     longitude: float = Field(
-        ...,
         default=17.11,
         title="Longitude",
         description="Location longitude in decimal degrees (e.g. 17.11 for Bratislava).",
     )
     start_date: str = Field(
-        ...,
         default="2026-01-01",
         title="Start Date",
         description="First day of the requested period in YYYY-MM-DD format.",
     )
     end_date: str = Field(
-        ...,
         default="2026-01-07",
         title="End Date",
         description="Last day of the requested period in YYYY-MM-DD format.",
