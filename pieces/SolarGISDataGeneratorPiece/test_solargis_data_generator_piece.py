@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from domino.testing import piece_dry_run
 
-from .piece import _build_records, _gti_from_ghi, _solar_position
+from pieces.SolarGISDataGeneratorPiece.piece import _build_records, _gti_from_ghi, _solar_position
 
 _FAKE_HOURLY = {
     "time": ["2024-06-01T10:00", "2024-06-01T11:00", "2024-06-01T12:00"],
