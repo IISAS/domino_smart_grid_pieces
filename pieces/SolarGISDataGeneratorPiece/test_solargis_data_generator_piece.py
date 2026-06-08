@@ -55,6 +55,5 @@ def test_solargis_csv_output():
 
     with open(file_path, encoding="utf-8", newline="") as f:
         reader = csv.DictReader(f, delimiter=";")
-
-    assert "PVOUT" in reader.fieldnames
-    assert "GHI" in reader.fieldnames
+        assert "PVOUT" in reader.fieldnames
+        assert "GHI" in reader.fieldnames
