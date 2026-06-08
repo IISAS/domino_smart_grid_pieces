@@ -4,17 +4,17 @@
 # Example:
 # DataPreprocessingPiece
 
-DataNormalizationPiece
-DataPreprocessingPiece
-ElectricityPricePredictionModelTrainPiece
-EvaluateMLModelPiece
-ExplainablePredictionPiece
-ForecastAggregatorPiece
-InferencePiece
-ModelDeciderPiece
-OKTEDataGeneratorPiece
-PVOUTErrorCorrectionModelTrainPiece
-PVOUTPredictionModelTrainPiece
+# DataNormalizationPiece
+# DataPreprocessingPiece
+# ElectricityPricePredictionModelTrainPiece
+# EvaluateMLModelPiece
+# ExplainablePredictionPiece
+# ForecastAggregatorPiece
+# InferencePiece
+# ModelDeciderPiece
+# OKTEDataGeneratorPiece
+# PVOUTErrorCorrectionModelTrainPiece
+# PVOUTPredictionModelTrainPiece
 # SolarGISDataGeneratorPiece
-SyntheticDataGeneratorPiece
-TestGpuSupprtPiece
+# SyntheticDataGeneratorPiece
+# TestGpuSupprtPiece
