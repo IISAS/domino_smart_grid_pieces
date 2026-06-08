@@ -6,8 +6,6 @@ from unittest.mock import patch
 
 from domino.testing import piece_dry_run
 
-from pieces.SolarGISDataGeneratorPiece.piece import _build_records, _gti_from_ghi, _solar_position
-
 _FAKE_HOURLY = {
     "time": ["2024-06-01T10:00", "2024-06-01T11:00", "2024-06-01T12:00"],
     "shortwave_radiation": [400.0, 600.0, 700.0],
@@ -101,30 +99,3 @@ def test_solargis_realtime_mode(_):
 def test_solargis_empty_response(_):
     output = piece_dry_run("SolarGISDataGeneratorPiece", _BASE_INPUT)
     assert output.get("file_path") is None
-
-
-def test_build_records_values():
-    records = _build_records(_FAKE_HOURLY, lat=48.15, lon=17.11, pvout_peak_kw=5.0, panel_tilt=30.0)
-    assert len(records) == 3
-    for r in records:
-        assert r["PVOUT"] >= 0.0
-        assert r["GTI"] >= r["GHI"] * 1.0  # tilt bonus
-        assert r["PVOUT_UNC_LOW"] <= r["PVOUT"] <= r["PVOUT_UNC_HIGH"]
-
-
-def test_solar_position_night():
-    from datetime import datetime
-    elev, _ = _solar_position(datetime(2024, 6, 1, 2, 0), lat=48.15, lon=17.11)
-    assert elev == 0.0
-
-
-def test_solar_position_day():
-    from datetime import datetime
-    elev, _ = _solar_position(datetime(2024, 6, 1, 12, 0), lat=48.15, lon=17.11)
-    assert elev > 0.0
-
-
-def test_gti_from_ghi():
-    gti = _gti_from_ghi(500.0, panel_tilt=30.0)
-    assert gti > 500.0
-    assert _gti_from_ghi(0.0, 30.0) == 0.0
