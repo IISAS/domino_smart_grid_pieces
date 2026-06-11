@@ -83,26 +83,34 @@ def test_inference_piece_pvout_correction_stub_model(monkeypatch, tmp_path: Path
         "InferencePiece",
         {
             "payload": {
-                "mode": "pvout_correction",
-                "model_path": dummy_model_path,
                 "input": {"tabular_data": rows},
                 "datetime_column": "datetime",
-                "feature_columns": ["f1", "f2"],
-                "base_forecast_column": "PVOUT",
                 "horizon_column": "pred_sequence_id",
                 "strict_schema": True,
+                "pvout_model": [
+                    {
+                        "mode": "pvout_correction",
+                        "model_path": dummy_model_path,
+                        "feature_columns": ["f1", "f2"],
+                        "base_forecast_column": "PVOUT",
+                        "target_column": "PVOUT",
+                    }
+                ],
             }
         },
     )
 
     assert output_data["message"] is not None
     forecast = output_data["artifacts"]["forecast"]
+    # `target_column` (here `PVOUT`) is appended by build_forecast_table so the saved CSV
+    # contains both prediction and ground truth side-by-side for downstream evaluators.
     assert forecast["columns"] == [
         "datetime",
         "pred_sequence_id",
         "base_forecast",
         "correction",
         "final_forecast",
+        "PVOUT",
     ]
     recs = forecast["inline_records"]
     assert len(recs) == 1
@@ -148,15 +156,19 @@ def test_inference_piece_price_ahead_baseline_from_profile(monkeypatch, tmp_path
         "InferencePiece",
         {
             "payload": {
-                "mode": "price_ahead",
-                "model_path": dummy_model_path,
                 "input": {"tabular_data": rows},
                 "datetime_column": "datetime",
-                "feature_columns": ["a", "b"],
-                "base_forecast_column": "price_baseline",
                 "horizon_column": "pred_sequence_id",
                 "build_baseline_if_missing": True,
                 "price_profile_path": str(profile_path),
+                "price_model": [
+                    {
+                        "mode": "price_ahead",
+                        "model_path": dummy_model_path,
+                        "feature_columns": ["a", "b"],
+                        "base_forecast_column": "price_baseline",
+                    }
+                ],
             }
         },
     )
@@ -188,8 +200,6 @@ def test_inference_piece_price_level_stub(monkeypatch, tmp_path: Path):
         "InferencePiece",
         {
             "payload": {
-                "mode": "price_level",
-                "model_path": dummy_model_path,
                 "input": {
                     "tabular_data": [
                         {
@@ -199,8 +209,14 @@ def test_inference_piece_price_level_stub(monkeypatch, tmp_path: Path):
                         }
                     ]
                 },
-                "feature_columns": ["load_kw"],
                 "horizon_column": "pred_sequence_id",
+                "price_model": [
+                    {
+                        "mode": "price_level",
+                        "model_path": dummy_model_path,
+                        "feature_columns": ["load_kw"],
+                    }
+                ],
             }
         },
     )
@@ -237,11 +253,15 @@ def test_inference_piece_stages_pipeline_single_stage(monkeypatch, tmp_path: Pat
                         }
                     ]
                 },
-                "stages": [
+                "price_model": [
                     {
-                        "mode": "price_level",
-                        "model_path": str(tmp_path / "m.joblib"),
-                        "feature_columns": ["f1"],
+                        "stages": [
+                            {
+                                "mode": "price_level",
+                                "model_path": str(tmp_path / "m.joblib"),
+                                "feature_columns": ["f1"],
+                            }
+                        ],
                     }
                 ],
             }

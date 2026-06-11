@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - dev3
     paths:
       - "config.toml"
       - "pieces/**"
@@ -13,6 +14,13 @@ on:
       - ".ci/skip-pieces.txt"
       - ".github/workflows/tests-dev.yml"
   workflow_dispatch:
+
+# Serialize per branch so two pushes on the same ref cannot race the
+# final `auto-organize` write-back step (the prior failure mode where the
+# second run hit `! [rejected] HEAD -> dev3 (fetch first)`).
+concurrency:
+  group: tests-dev-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   run-tests-dev:
@@ -26,7 +34,16 @@ jobs:
 
       - name: Compute image tag prefix
         shell: bash
-        run: echo "TAG_PREFIX=development" >> "$GITHUB_ENV"
+        run: |
+          set -euo pipefail
+          BRANCH="${{ github.ref_name }}"
+          if [[ "$BRANCH" == "dev3" ]]; then
+            TAG_PREFIX="dev-3"
+          else
+            TAG_PREFIX="development"
+          fi
+          echo "TAG_PREFIX=$TAG_PREFIX" >> "$GITHUB_ENV"
+          echo "Using image tag prefix: $TAG_PREFIX"
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v3
@@ -100,20 +117,55 @@ jobs:
 
       - name: Publish images
         working-directory: ${{ env.CI_WORKDIR }}
+        shell: bash
         env:
-          GHCR_USERNAME: ${{ github.actor }}
-          # Helps with large image pushes and slow runner networking.
-          DOCKER_CLIENT_TIMEOUT: "300"
-          COMPOSE_HTTP_TIMEOUT: "300"
+          # PIECES_IMAGES_MAP is populated by `domino piece organize --build-images`
+          # (written to $GITHUB_ENV) as `{"<piece>": "<image:tag>", ...}`.
+          PIECES_IMAGES_MAP_JSON: ${{ env.PIECES_IMAGES_MAP }}
         run: |
-          echo "Publishing images (up to 3 attempts)..."
-          for i in 1 2 3; do
-            domino piece publish-images --registry-token ${{ secrets.GITHUB_TOKEN }} && exit 0
-            echo "Attempt $i failed."
-            sleep 20
+          set -euo pipefail
+
+          # `domino piece publish-images` uses docker-py, whose default 60s
+          # socket read timeout trips on large image pushes when the local
+          # docker daemon goes quiet between progress chunks. Push via the
+          # docker CLI directly instead: it streams stably and respects
+          # DOCKER_CLIENT_TIMEOUT-style behaviour. The earlier
+          # `docker/login-action` step already authenticated us against ghcr.io.
+
+          if [[ -z "${PIECES_IMAGES_MAP_JSON:-}" ]]; then
+            echo "PIECES_IMAGES_MAP is empty — `domino piece organize` did not produce any images?"
+            exit 1
+          fi
+
+          mapfile -t IMAGES < <(echo "$PIECES_IMAGES_MAP_JSON" | jq -r '[.[]] | unique | .[]')
+
+          if [[ ${#IMAGES[@]} -eq 0 ]]; then
+            echo "No images extracted from PIECES_IMAGES_MAP."
+            exit 1
+          fi
+
+          echo "Will push ${#IMAGES[@]} image(s):"
+          printf '  - %s\n' "${IMAGES[@]}"
+
+          for img in "${IMAGES[@]}"; do
+            echo "::group::Pushing $img"
+            pushed=0
+            for attempt in 1 2 3 4 5; do
+              if docker push "$img"; then
+                echo "Pushed $img on attempt $attempt."
+                pushed=1
+                break
+              fi
+              backoff=$((attempt * 20))
+              echo "Push of $img failed on attempt $attempt; retrying in ${backoff}s..."
+              sleep "$backoff"
+            done
+            echo "::endgroup::"
+            if [[ "$pushed" -ne 1 ]]; then
+              echo "Push of $img failed after 5 attempts."
+              exit 1
+            fi
           done
-          echo "Publish failed after retries."
-          exit 1
 
       - name: Sync generated domino metadata back
         shell: bash
@@ -139,20 +191,83 @@ jobs:
           fi
 
       - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          push_succeeded=0
+          if [[ "$(git rev-parse HEAD)" == "${{ github.sha }}" ]]; then
+            echo "No auto-organize commit to push."
+            push_succeeded=1
+          fi
+
+          # Belt-and-braces against a residual race: concurrency above already
+          # serializes per branch, but in the rare overlap (e.g. push event +
+          # workflow_dispatch starting concurrently) rebase on top of the new
+          # remote tip and retry.
+          if [[ "$push_succeeded" -eq 0 ]]; then
+            for attempt in 1 2 3 4 5; do
+              if git push "$REMOTE_URL" "HEAD:$BRANCH"; then
+                echo "Push succeeded on attempt $attempt."
+                push_succeeded=1
+                break
+              fi
+              echo "Push attempt $attempt rejected; rebasing on remote $BRANCH and retrying..."
+              git fetch "$REMOTE_URL" "$BRANCH"
+              # --empty=drop: if the other run already pushed an identical
+              # auto-organize commit, our patch becomes empty and we just
+              # fast-forward to the remote tip (push then becomes a no-op).
+              git rebase --empty=drop FETCH_HEAD || {
+                echo "Rebase failed; aborting and bailing out."
+                git rebase --abort || true
+                exit 1
+              }
+              sleep $((attempt * 5))
+            done
+          fi
+
+          if [[ "$push_succeeded" -ne 1 ]]; then
+            echo "Push failed after retries."
+            exit 1
+          fi
+
+          # Always anchor the release to the SHA that is actually on the remote
+          # ref now (rebase may have changed local HEAD, e.g. when our
+          # auto-organize was dropped as empty).
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Create Release
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
           # Immutable, incrementing dev release (keeps history)
           DEV_TAG="${TAG_PREFIX}-${{ github.run_number }}"
           domino piece release --tag-name="$DEV_TAG" --commit-sha="$commit_sha"
 
           # Moving "latest dev" tag for consumers that always pull `${TAG_PREFIX}`
           domino piece delete-release --tag-name=${TAG_PREFIX} || true
-          domino piece release --tag-name=${TAG_PREFIX} --commit-sha="$commit_sha"
+
+          # GitHub tag/release deletion can be eventually consistent.
+          # Re-creating the same moving tag immediately may intermittently fail.
+          release_created=0
+          for attempt in 1 2 3 4 5; do
+            if domino piece release --tag-name=${TAG_PREFIX} --commit-sha="$commit_sha"; then
+              echo "Created moving tag ${TAG_PREFIX} on attempt $attempt."
+              release_created=1
+              break
+            fi
+            backoff=$((attempt * 10))
+            echo "Creating ${TAG_PREFIX} failed on attempt $attempt; retrying in ${backoff}s..."
+            sleep "$backoff"
+          done
+
+          if [[ "$release_created" -ne 1 ]]; then
+            echo "Failed to create moving tag ${TAG_PREFIX} after retries."
+            exit 1
+          fi

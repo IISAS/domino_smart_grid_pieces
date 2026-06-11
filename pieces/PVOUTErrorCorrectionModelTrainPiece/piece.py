@@ -1,12 +1,13 @@
 from domino.base_piece import BasePiece
 
-from .models import InputModel, OutputModel
+from .models import InputModel, ModelSpec, OutputModel
 from .utils.model_decider import MODEL_TYPES, TrainedModel, train_model
 
 
 class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
     def piece_function(self, input_data: InputModel):
         import csv
+        import json
         import os
         import pickle
         import tempfile
@@ -23,9 +24,9 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
 
         model_type = str(payload.get("model_type", "linear_regression")).lower()
         model_params = payload.get("model_params") or {}
-        setup = payload.get("model_setup") or {}
-        feature_columns = setup.get("feature_columns")
-        target_column = setup.get("target_column", "PVOUT")
+        setup = dict(payload.get("model_setup") or {})
+        feature_columns = setup.get("feature_columns") or payload.get("feature_columns")
+        target_column = setup.get("target_column") or payload.get("target_column", "PVOUT")
 
         if model_type not in MODEL_TYPES:
             raise ValueError(
@@ -35,6 +36,14 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
 
         if not feature_columns:
             raise ValueError("`payload['model_setup']['feature_columns']` is required.")
+
+        # Normalize: train_model() consumes feature_columns / target_column from
+        # `setup`, so propagate the resolved values back in case they were sourced
+        # from the top-level payload fields (e.g. typed UI bindings from upstream
+        # pieces). Without this the XGB error-correction models receive an empty
+        # feature list and xgboost raises "0 feature is supplied".
+        setup["feature_columns"] = list(feature_columns)
+        setup["target_column"] = str(target_column)
 
         def _load_rows_from_csv(path: str) -> list[dict]:
             with open(path, "r", encoding="utf-8") as f:
@@ -92,6 +101,21 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
                     "Install pandas or use `linear_regression` / `ridge_regression`."
                 )
 
+        # Workflow adapter: when an upstream baseline model checkpoint is provided,
+        # generate the predicted-PVOUT column the XGB error-correction models need.
+        baseline_model_path = payload.get("baseline_model_path")
+        if baseline_model_path and full_df is not None:
+            from .utils.baseline import load_baseline_model, predict_baseline
+
+            pred_column = setup.get("pred_column") or "PVOUT_PRED"
+            setup["pred_column"] = pred_column
+            if pred_column not in full_df.columns:
+                baseline_model = load_baseline_model(baseline_model_path)
+                full_df = full_df.copy()
+                full_df[pred_column] = predict_baseline(
+                    baseline_model, full_df[feature_columns]
+                )
+
         X_list = []
         y_list = []
         source_rows = rows if full_df is None else full_df.to_dict(orient="records")
@@ -143,7 +167,8 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
             with open(checkpoint_path, "wb") as f:
                 pickle.dump(serializable_model, f)
         else:
-            # For external model classes, persist an envelope and save full object fallback.
+            # External model classes: persist the same envelope shape the
+            # InferencePiece loader expects (`{"metadata": ..., "trained_model_object": ...}`).
             serializable_model = {
                 "model_type": model_type,
                 "feature_columns": feature_columns,
@@ -159,11 +184,52 @@ class PVOUTErrorCorrectionModelTrainPiece(BasePiece):
                     f,
                 )
 
+        resolved_data_path = payload.get("data_path") or payload.get("csv_path")
+
+        # Persist the trained-model envelope as preprocessing_metadata.json so
+        # downstream Inference can recover `feature_columns_used` / target /
+        # params without re-loading the pickle. Mirrors what the price trainer
+        # writes ([ElectricityPricePredictionModelTrainPiece/piece.py:156-158]).
+        preprocessing_metadata = {
+            "model_type": model_type,
+            "feature_columns": list(feature_columns),
+            "feature_columns_used": list(feature_columns),
+            "target_column": str(target_column),
+            "params": model_params,
+        }
+        preprocessing_metadata_path = os.path.join(
+            checkpoint_dir, "preprocessing_metadata.json"
+        )
+        with open(preprocessing_metadata_path, "w", encoding="utf-8") as f:
+            json.dump(preprocessing_metadata, f, indent=2)
+
+        # Typed bundle for one-click upstream binding from InferencePiece.pvout_model.
+        # `model_id="pvout"` matches the slot name, so forecast filenames stay clean
+        # (`pvout.csv` instead of `pvout_correction.csv`).
+        model_spec = ModelSpec(
+            model_id="pvout",
+            mode="pvout_correction",
+            model_path=checkpoint_path,
+            data_path=resolved_data_path,
+            preprocessing_metadata_path=preprocessing_metadata_path,
+            feature_columns=list(feature_columns),
+            target_column=str(target_column),
+            base_forecast_column=str(target_column),
+        )
+
         return OutputModel(
             message="PVOUTErrorCorrectionModelTrainPiece executed.",
+            model_path=checkpoint_path,
+            feature_columns=list(feature_columns),
+            target_column=str(target_column),
+            data_path=resolved_data_path,
+            preprocessing_metadata_path=preprocessing_metadata_path,
+            baseline_model_path=baseline_model_path,
+            model_spec=[model_spec],
             artifacts={
                 "trained_model": serializable_model,
                 "checkpoint_path": checkpoint_path,
+                "preprocessing_metadata_path": preprocessing_metadata_path,
                 "train_metrics": train_metrics,
             },
         )

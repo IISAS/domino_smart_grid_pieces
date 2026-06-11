@@ -1,186 +1,28 @@
 {
-    "EvaluateMLModelPiece": {
-        "name": "EvaluateMLModelPiece",
+    "SolarGISDataGeneratorPiece": {
+        "name": "SolarGISDataGeneratorPiece",
         "dependency": {
             "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
+            "requirements_file": "requirements_1.txt"
         },
         "tags": [
-            "Template",
-            "Model",
-            "Evaluation"
+            "SolarGIS",
+            "SyntheticData",
+            "Generator"
         ],
         "style": {
-            "node_label": "Evaluate ML Model",
+            "node_label": "SolarGIS Data Generator",
             "node_type": "default",
             "node_style": {
                 "backgroundColor": "#ebebeb"
             },
             "useIcon": true,
-            "icon_class_name": "fa-solid:clipboard-check",
+            "icon_class_name": "fa-solid:bolt",
             "iconStyle": {
                 "cursor": "pointer"
             }
         },
-        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 1024
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "evaluation_option": {
-                    "default": "normal",
-                    "description": "Evaluation mode: `normal` or `errorcorrection`.",
-                    "title": "Evaluation Option",
-                    "type": "string"
-                },
-                "baseline_id": {
-                    "default": 1,
-                    "description": "Baseline horizon id.",
-                    "title": "Baseline Id",
-                    "type": "integer"
-                },
-                "plot": {
-                    "default": false,
-                    "description": "Whether to generate plots/heatmaps.",
-                    "title": "Plot",
-                    "type": "boolean"
-                },
-                "forecast_column": {
-                    "default": "final_forecast",
-                    "description": "Name of the predicted-value column in pred_df. Defaults to `final_forecast` (from InferencePiece). Switch to `correction` when evaluating the raw model output in pvout_correction mode.",
-                    "title": "Forecast Column",
-                    "type": "string"
-                },
-                "target_column": {
-                    "default": "PVOUT",
-                    "description": "Name of the ground-truth column in pred_df. Default `PVOUT`.",
-                    "title": "Target Column",
-                    "type": "string"
-                },
-                "pred_df_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to predictions CSV (e.g. inference.forecast_csv_path).",
-                    "title": "Pred Df Path"
-                },
-                "true_baseline_df_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to true-baseline CSV for errorcorrection mode.",
-                    "title": "True Baseline Df Path"
-                },
-                "pred_df": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Inline predictions payload as JSON object.",
-                    "title": "Pred Df"
-                },
-                "true_baseline_df": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional baseline payload as JSON object.",
-                    "title": "True Baseline Df"
-                },
-                "y_true": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional true values as JSON array.",
-                    "title": "Y True"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., metrics JSON, plots, report URI).",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
-    },
-    "DataNormalizationPiece": {
-        "name": "DataNormalizationPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "Template",
-            "Data",
-            "Normalization"
-        ],
-        "style": {
-            "node_label": "Data Normalization",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:scale-balanced",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Template piece for normalizing raw smart-grid data into a consistent scale and schema.",
+        "description": "Generate synthetic SolarGIS solar radiation data (global horizontal irradiation, direct normal irradiation, diffuse horizontal irradiation) in batch or realtime-like mode.",
         "container_resources": {
             "requests": {
                 "cpu": 100,
@@ -194,7 +36,43 @@
         "input_schema": {
             "additionalProperties": true,
             "properties": {
-                "normalization_type": {
+                "latitude": {
+                    "default": 48.15,
+                    "description": "Location latitude in decimal degrees (e.g. 48.15 for Bratislava).",
+                    "title": "Latitude",
+                    "type": "number"
+                },
+                "longitude": {
+                    "default": 17.11,
+                    "description": "Location longitude in decimal degrees (e.g. 17.11 for Bratislava).",
+                    "title": "Longitude",
+                    "type": "number"
+                },
+                "start_date": {
+                    "default": "2026-01-01",
+                    "description": "First day of the requested period in YYYY-MM-DD format.",
+                    "title": "Start Date",
+                    "type": "string"
+                },
+                "end_date": {
+                    "default": "2026-01-07",
+                    "description": "Last day of the requested period in YYYY-MM-DD format.",
+                    "title": "End Date",
+                    "type": "string"
+                },
+                "pvout_peak_kw": {
+                    "default": 5.2,
+                    "description": "Installed peak power of the PV system used to estimate PVOUT.",
+                    "title": "PV System Peak Power (kWp)",
+                    "type": "number"
+                },
+                "panel_tilt": {
+                    "default": 30.0,
+                    "description": "Tilt of the PV panels in degrees from horizontal for GTI calculation.",
+                    "title": "Panel Tilt (degrees)",
+                    "type": "number"
+                },
+                "output_mode": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -203,19 +81,11 @@
                             "type": "null"
                         }
                     ],
-                    "default": "none",
-                    "description": "One of: `none`, `min_max`, `z_score`, `logaritmic`, `exponential`. Use `none` (passthrough) for tree-based models like XGBoost. Usually wired upstream from `ModelDeciderPiece.Normalization Type`.",
-                    "title": "Normalization Type"
+                    "default": "batch_sample",
+                    "description": "One of: `batch_sample`, `realtime_stream`.",
+                    "title": "Output Mode"
                 },
-                "features": {
-                    "description": "Optional list of column names to normalize. Empty = apply to all numeric columns. Click `+` and add column names like `GHI`, `TEMP`, `WS`.",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Features",
-                    "type": "array"
-                },
-                "data_path": {
+                "output_format": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -225,21 +95,8 @@
                         }
                     ],
                     "default": null,
-                    "description": "Path to input CSV. Wire upstream from `DataPreprocessingPiece.Data Path` (the preprocessor's `preprocessed.csv`).",
-                    "title": "Data Path"
-                },
-                "dataframe": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional inline dataframe payload (JSON object). Leave empty when `Data Path` is provided.",
-                    "title": "Dataframe"
+                    "description": "One of: `json`, `csv`.",
+                    "title": "Output Format"
                 }
             },
             "title": "InputModel",
@@ -247,12 +104,7 @@
         },
         "output_schema": {
             "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "data_path": {
+                "file_path": {
                     "anyOf": [
                         {
                             "type": "string"
@@ -262,37 +114,158 @@
                         }
                     ],
                     "default": null,
-                    "description": "Path to normalized CSV (consumable upstream \u2192 trainer / inference).",
-                    "title": "Data Path"
+                    "title": "Dataset file path"
                 },
-                "normalization_type": {
-                    "default": "none",
-                    "description": "Normalization type that was applied.",
-                    "title": "Normalization Type",
-                    "type": "string"
-                },
-                "features": {
-                    "description": "Feature columns that were normalized.",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Features",
-                    "type": "array"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., normalized dataset URI, fitted scaler params).",
-                    "title": "Artifacts",
-                    "type": "object"
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Suggested target column for the generated dataset (pass downstream via fromUpstream).",
+                    "title": "Target column"
                 }
             },
-            "required": [
-                "message"
-            ],
             "title": "OutputModel",
             "type": "object"
         },
         "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataNormalizationPiece"
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/SolarGISDataGeneratorPiece"
+    },
+    "OKTEDataGeneratorPiece": {
+        "name": "OKTEDataGeneratorPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "OKTE",
+            "SyntheticData",
+            "Generator",
+            "ElectricityMarket"
+        ],
+        "style": {
+            "node_label": "OKTE Data Generator",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:bolt",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Generate synthetic OKTE electricity market data (spot price, imbalance, scheduled and actual generation) in batch or realtime-like mode.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "records_count": {
+                    "default": 20,
+                    "description": "Number of records to generate.",
+                    "title": "Records Count",
+                    "type": "integer"
+                },
+                "time_step_minutes": {
+                    "default": 15,
+                    "description": "Time step between generated records in minutes.",
+                    "title": "Time Step Minutes",
+                    "type": "integer"
+                },
+                "output_mode": {
+                    "default": "batch_sample",
+                    "description": "One of: `batch_sample`, `realtime_stream`.",
+                    "title": "Output Mode",
+                    "type": "string"
+                },
+                "output_format": {
+                    "default": "csv",
+                    "description": "One of: `json`, `csv`.",
+                    "title": "Output Format",
+                    "type": "string"
+                },
+                "interval_ms": {
+                    "default": 1000,
+                    "description": "Realtime interval hint in milliseconds (only used in realtime_stream mode).",
+                    "title": "Interval Ms",
+                    "type": "integer"
+                },
+                "start_at": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional start datetime in ISO format. Defaults to current UTC time.",
+                    "title": "Start At"
+                },
+                "seed": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional random seed for reproducible output.",
+                    "title": "Seed"
+                },
+                "timezone_offset_hours": {
+                    "default": 1.0,
+                    "description": "Timezone offset in hours applied to Date/Time columns (CET = 1.0).",
+                    "title": "Timezone Offset Hours",
+                    "type": "number"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "file_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Dataset file path"
+                },
+                "target_column": {
+                    "default": "spot_price_eur_mwh",
+                    "description": "Suggested target column for downstream preprocessing/training pieces.",
+                    "title": "Target column",
+                    "type": "string"
+                }
+            },
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/OKTEDataGeneratorPiece"
     },
     "SyntheticDataGeneratorPiece": {
         "name": "SyntheticDataGeneratorPiece",
@@ -437,6 +410,19 @@
                     ],
                     "default": null,
                     "title": "Dataset file path"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Suggested target column for the generated dataset (pass downstream via fromUpstream).",
+                    "title": "Target column"
                 }
             },
             "title": "OutputModel",
@@ -444,336 +430,6 @@
         },
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/SyntheticDataGeneratorPiece"
-    },
-    "InferencePiece": {
-        "name": "InferencePiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_1.txt"
-        },
-        "tags": [
-            "Template",
-            "Model",
-            "Inference"
-        ],
-        "style": {
-            "node_label": "Inference",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:bolt",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Runs inference on prepared features: pvout_correction or price_ahead (base + model correction).",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 512
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "mode": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Inference mode: `pvout_correction`, `price_ahead`, `price_level`.",
-                    "title": "Mode"
-                },
-                "model_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Model artifact path.",
-                    "title": "Model Path"
-                },
-                "data_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to input CSV (e.g. from preprocessor/normalization).",
-                    "title": "Data Path"
-                },
-                "feature_columns": {
-                    "description": "Feature columns the model expects (from preprocessor/decider/trainer).",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Feature Columns",
-                    "type": "array"
-                },
-                "datetime_column": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Datetime column name.",
-                    "title": "Datetime Column"
-                },
-                "base_forecast_column": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Baseline forecast column name.",
-                    "title": "Base Forecast Column"
-                },
-                "horizon_column": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Horizon/id column name.",
-                    "title": "Horizon Column"
-                },
-                "max_horizon": {
-                    "anyOf": [
-                        {
-                            "type": "integer"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional maximum horizon.",
-                    "title": "Max Horizon"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "forecast_csv_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to forecast CSV (consumable upstream \u2192 evaluator.pred_df_path).",
-                    "title": "Forecast Csv Path"
-                },
-                "artifacts": {
-                    "description": "No-op: `input_payload`. Run: `forecast` (inline_records, csv_path, columns), `per_horizon`, `metadata`, optional `debug`. Pipeline: additionally `stage_summaries`.",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
-    },
-    "DataPreprocessingPiece": {
-        "name": "DataPreprocessingPiece",
-        "dependency": {
-            "dockerfile": null,
-            "requirements_file": "requirements_0.txt"
-        },
-        "tags": [
-            "Template",
-            "Data",
-            "Preprocessing"
-        ],
-        "style": {
-            "node_label": "Data Preprocessing",
-            "node_type": "default",
-            "node_style": {
-                "backgroundColor": "#ebebeb"
-            },
-            "useIcon": true,
-            "icon_class_name": "fa-solid:filter",
-            "iconStyle": {
-                "cursor": "pointer"
-            }
-        },
-        "description": "Template piece for cleaning, validating, and preprocessing input data prior to feature engineering or training.",
-        "container_resources": {
-            "requests": {
-                "cpu": 100,
-                "memory": 128
-            },
-            "limits": {
-                "cpu": 500,
-                "memory": 512
-            }
-        },
-        "input_schema": {
-            "additionalProperties": true,
-            "properties": {
-                "preprocessing_option": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "One of: `none`, `prediction`, `correction`.",
-                    "title": "Preprocessing Option"
-                },
-                "data_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional input data path.",
-                    "title": "Data Path"
-                },
-                "save_data_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional output path.",
-                    "title": "Save Data Path"
-                },
-                "test_size": {
-                    "anyOf": [
-                        {
-                            "type": "number"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Optional split size.",
-                    "title": "Test Size"
-                },
-                "keep_datetime": {
-                    "anyOf": [
-                        {
-                            "type": "boolean"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Keep datetime column if supported.",
-                    "title": "Keep Datetime"
-                }
-            },
-            "title": "InputModel",
-            "type": "object"
-        },
-        "output_schema": {
-            "properties": {
-                "message": {
-                    "description": "Human-readable status message.",
-                    "title": "Message",
-                    "type": "string"
-                },
-                "data_path": {
-                    "anyOf": [
-                        {
-                            "type": "string"
-                        },
-                        {
-                            "type": "null"
-                        }
-                    ],
-                    "default": null,
-                    "description": "Path to preprocessed CSV (consumable upstream \u2192 normalization / trainer / inference).",
-                    "title": "Data Path"
-                },
-                "feature_columns": {
-                    "description": "Resolved feature columns (consumable upstream \u2192 trainer / inference).",
-                    "items": {
-                        "type": "string"
-                    },
-                    "title": "Feature Columns",
-                    "type": "array"
-                },
-                "target_column": {
-                    "default": "PVOUT",
-                    "description": "Target column used (consumable upstream \u2192 trainer).",
-                    "title": "Target Column",
-                    "type": "string"
-                },
-                "artifacts": {
-                    "description": "Optional outputs (e.g., cleaned dataset URI, dropped rows stats).",
-                    "title": "Artifacts",
-                    "type": "object"
-                }
-            },
-            "required": [
-                "message"
-            ],
-            "title": "OutputModel",
-            "type": "object"
-        },
-        "secrets_schema": null,
-        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataPreprocessingPiece"
     },
     "PVOUTPredictionModelTrainPiece": {
         "name": "PVOUTPredictionModelTrainPiece",
@@ -891,6 +547,107 @@
             "type": "object"
         },
         "output_schema": {
+            "$defs": {
+                "ModelSpec": {
+                    "additionalProperties": true,
+                    "description": "Typed bundle that matches `InferencePiece.ModelSpec`.\n\nExposed as a single typed output so a downstream `InferencePiece.models[i]`\nentry can bind to one trainer in a single click instead of toggling each\nfield separately. Inference reads the same field names so Domino's UI\nmatches them by name.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "preprocessing_metadata_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Preprocessing Metadata Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        },
+                        "base_forecast_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Base Forecast Column"
+                        }
+                    },
+                    "title": "ModelSpec",
+                    "type": "object"
+                }
+            },
             "properties": {
                 "message": {
                     "description": "Human-readable status message.",
@@ -924,6 +681,48 @@
                     "title": "Target Column",
                     "type": "string"
                 },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed input data path (consumable upstream \u2192 error-correction trainer / inference).",
+                    "title": "Data Path"
+                },
+                "preprocessing_metadata_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to preprocessing_metadata.json (consumable upstream \u2192 inference.preprocessing_metadata_path).",
+                    "title": "Preprocessing Metadata Path"
+                },
+                "model_spec": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ModelSpec"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Single-element list mirroring `InferencePiece.pvout_model` so the entire bundle binds in one click. `model_path`, `data_path`, `feature_columns`, `target_column`, `mode`, and `base_forecast_column` are pre-populated with sensible PVOUT-baseline defaults.",
+                    "title": "Model Spec"
+                },
                 "artifacts": {
                     "description": "Optional outputs (e.g., trained model URI, training metrics).",
                     "title": "Artifacts",
@@ -938,6 +737,199 @@
         },
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTPredictionModelTrainPiece"
+    },
+    "ExplainablePredictionPiece": {
+        "name": "ExplainablePredictionPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_3.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Explainability"
+        ],
+        "style": {
+            "node_label": "Explainable Prediction",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:magnifying-glass-chart",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for generating prediction explanations (e.g., feature attributions) alongside inference results.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 1024
+            }
+        },
+        "input_schema": {
+            "$defs": {
+                "ForecastBinding": {
+                    "additionalProperties": true,
+                    "description": "Structural mirror of `InferencePiece.OutputModel.forecasts[*]`.\n\nLets a single upstream edge `ExplainablePrediction.forecasts \u2190 Inference.forecasts`\nauto-populate per-model explanations without manual per-entry wiring.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "forecast_csv_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Forecast Csv Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        }
+                    },
+                    "title": "ForecastBinding",
+                    "type": "object"
+                }
+            },
+            "additionalProperties": true,
+            "properties": {
+                "forecasts": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ForecastBinding"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Per-model forecast entries \u2014 wire in one click from `InferencePiece.OutputModel.forecasts`. Each entry's `model_path`, `data_path`, `feature_columns`, `target_column` drive the explanation run for that model.",
+                    "title": "Forecasts"
+                },
+                "explain": {
+                    "default": false,
+                    "description": "Enable explainability run.",
+                    "title": "Explain",
+                    "type": "boolean"
+                },
+                "explain_method": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "`lime` or `shap`. Defaults to `shap` when `explain=True`.",
+                    "title": "Explain Method"
+                },
+                "use_diagnostic_loss": {
+                    "default": false,
+                    "description": "Enable diagnostic heatmap artifacts.",
+                    "title": "Use Diagnostic Loss",
+                    "type": "boolean"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "`input_payload` on no-op. On run: aggregated `per_model = {model_id: {...}}` plus first-entry top-level keys for back-compat.",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ExplainablePredictionPiece"
     },
     "ModelDeciderPiece": {
         "name": "ModelDeciderPiece",
@@ -1030,6 +1022,19 @@
                     "default": "PVOUT",
                     "description": "Target column name to forecast. Default `PVOUT` for solargis-style datasets.",
                     "title": "Target Column"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional passthrough of the preprocessed data path. When wired upstream from `DataPreprocessingPiece.Data Path`, this is echoed to downstream pieces so the linear chain only needs one upstream edge per node.",
+                    "title": "Data Path"
                 }
             },
             "title": "InputModel",
@@ -1068,6 +1073,19 @@
                     "title": "Target Column",
                     "type": "string"
                 },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed preprocessed data path (consumable upstream \u2192 normalization / trainer / inference).",
+                    "title": "Data Path"
+                },
                 "decision_path": {
                     "anyOf": [
                         {
@@ -1095,5 +1113,2091 @@
         },
         "secrets_schema": null,
         "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ModelDeciderPiece"
+    },
+    "TestGpuSupprtPiece": {
+        "name": "TestGpuSupprtPiece",
+        "dependency": {
+            "dockerfile": "Dockerfile.pytorch-gpu",
+            "requirements_file": null
+        },
+        "tags": [
+            "PyTorch",
+            "GPU",
+            "diagnostics"
+        ],
+        "style": {
+            "node_label": "Test PyTorch GPU",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-duotone fa-solid fa-right-to-bracket",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Piece that starts PyTorch in a GPU container and reports CUDA devices and a small GPU matmul probe.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 512
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 2048
+            },
+            "use_gpu": true
+        },
+        "input_schema": {
+            "description": "TestGpuSupprt Input Model",
+            "properties": {},
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "description": "TestGpuSupprt Output Model",
+            "properties": {
+                "pytorch_version": {
+                    "description": "Loaded PyTorch version.",
+                    "title": "Pytorch Version",
+                    "type": "string"
+                },
+                "cuda_available": {
+                    "description": "Whether PyTorch can access CUDA at runtime.",
+                    "title": "Cuda Available",
+                    "type": "boolean"
+                },
+                "cuda_version": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "CUDA version PyTorch was built against.",
+                    "title": "Cuda Version"
+                },
+                "cudnn_version": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "cuDNN version when available.",
+                    "title": "Cudnn Version"
+                },
+                "device_count": {
+                    "description": "Number of CUDA devices visible to PyTorch.",
+                    "title": "Device Count",
+                    "type": "integer"
+                },
+                "devices": {
+                    "description": "CUDA device metadata reported by PyTorch.",
+                    "items": {
+                        "type": "object"
+                    },
+                    "title": "Devices",
+                    "type": "array"
+                },
+                "current_device": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "Current CUDA device index when a GPU is available.",
+                    "title": "Current Device"
+                },
+                "gpu_available": {
+                    "description": "True when PyTorch sees at least one CUDA device.",
+                    "title": "Gpu Available",
+                    "type": "boolean"
+                },
+                "gpu_operation_result": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "items": {
+                                    "type": "number"
+                                },
+                                "type": "array"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "Result of a small PyTorch matmul on GPU when available.",
+                    "title": "Gpu Operation Result"
+                },
+                "gpu_operation_error": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "description": "Error from the small PyTorch GPU operation when it could not run.",
+                    "title": "Gpu Operation Error"
+                }
+            },
+            "required": [
+                "pytorch_version",
+                "cuda_available",
+                "cuda_version",
+                "cudnn_version",
+                "device_count",
+                "devices",
+                "current_device",
+                "gpu_available",
+                "gpu_operation_result",
+                "gpu_operation_error"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/TestGpuSupprtPiece"
+    },
+    "ForecastAggregatorPiece": {
+        "name": "ForecastAggregatorPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Forecast",
+            "Aggregator",
+            "Comparison"
+        ],
+        "style": {
+            "node_label": "Forecast Aggregator",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:table-columns",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Aggregates per-model forecast CSVs (from InferencePiece) into one comparison CSV, joining on datetime + horizon and optionally adding the actual target column from a preprocessed dataset.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "$defs": {
+                "ForecastEntry": {
+                    "additionalProperties": true,
+                    "description": "A single per-model forecast to include in the aggregated CSV.\n\nMirrors `InferencePiece.OutputModel.forecasts[*]` so the two pieces wire\ndirectly without any reshape on the orchestration side.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Identifier used to suffix the aggregated `pred_<model_id>` column.",
+                            "title": "Model Id"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Source model checkpoint (informational).",
+                            "title": "Model Path"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Inference mode used (informational).",
+                            "title": "Mode"
+                        },
+                        "forecast_csv_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Path to this model's forecast CSV (produced by InferencePiece).",
+                            "title": "Forecast Csv Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        }
+                    },
+                    "title": "ForecastEntry",
+                    "type": "object"
+                }
+            },
+            "additionalProperties": true,
+            "properties": {
+                "forecasts": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ForecastEntry"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Per-model forecast entries. Typically wired from `InferencePiece.OutputModel.forecasts`.",
+                    "title": "Forecasts"
+                },
+                "actual_csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional CSV containing the ground-truth target column (e.g. preprocessed dataset). When supplied, an `actual_<target>` column is added. The target column name is taken from the first forecast entry's `target_column`.",
+                    "title": "Actual Csv Path"
+                },
+                "datetime_column": {
+                    "default": "datetime",
+                    "description": "Join key for datetime.",
+                    "title": "Datetime Column",
+                    "type": "string"
+                },
+                "horizon_column": {
+                    "default": "pred_sequence_id",
+                    "description": "Optional join key for horizon/id.",
+                    "title": "Horizon Column",
+                    "type": "string"
+                },
+                "forecast_column": {
+                    "default": "final_forecast",
+                    "description": "Column in each forecast CSV that holds the model's prediction.",
+                    "title": "Forecast Column",
+                    "type": "string"
+                },
+                "include_diff": {
+                    "default": false,
+                    "description": "If true and an actual column is present, also emit `diff_<model_id>` columns.",
+                    "title": "Include Diff",
+                    "type": "boolean"
+                },
+                "output_csv_name": {
+                    "default": "aggregated_forecast.csv",
+                    "description": "Filename of the aggregated CSV under `results_path`.",
+                    "title": "Output Csv Name",
+                    "type": "string"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "aggregated_csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to the produced aggregated CSV (None on no-op).",
+                    "title": "Aggregated Csv Path"
+                },
+                "model_ids": {
+                    "description": "Identifiers of models present as `pred_<id>` columns.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Model Ids",
+                    "type": "array"
+                },
+                "n_rows": {
+                    "default": 0,
+                    "description": "Number of rows in the aggregated CSV.",
+                    "title": "N Rows",
+                    "type": "integer"
+                },
+                "artifacts": {
+                    "description": "`input_payload` on no-op; otherwise `{columns, model_ids, n_rows}`.",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ForecastAggregatorPiece"
+    },
+    "InferencePiece": {
+        "name": "InferencePiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_1.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Inference"
+        ],
+        "style": {
+            "node_label": "Inference",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:bolt",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Runs inference on prepared features: pvout_correction or price_ahead (base + model correction).",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "$defs": {
+                "ModelSpec": {
+                    "additionalProperties": true,
+                    "description": "One trained-model entry consumed by InferencePiece.\n\nThe canonical workflow exposes two named slots (`pvout_model`, `price_model`)\non `InferencePiece.InputModel`. Each binds in one click to the matching\ntrainer's `model_spec` output. Top-level fields like `datetime_column` are\ninherited into each entry at runtime.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Stable identifier for this model (used in forecast filenames and per-model artifacts). Falls back to the slot name (`pvout` / `price`) when omitted.",
+                            "title": "Model Id"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Inference mode: `pvout_correction`, `price_ahead`, `price_level`.",
+                            "title": "Mode"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Model artifact path.",
+                            "title": "Model Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Path to input CSV (defaults to parent payload's data_path when missing).",
+                            "title": "Data Path"
+                        },
+                        "preprocessing_metadata_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Optional explicit metadata JSON next to the model checkpoint.",
+                            "title": "Preprocessing Metadata Path"
+                        },
+                        "feature_columns": {
+                            "description": "Feature columns the model expects.",
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Target column name (for downstream metrics/aggregation).",
+                            "title": "Target Column"
+                        },
+                        "base_forecast_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Baseline forecast column name.",
+                            "title": "Base Forecast Column"
+                        },
+                        "datetime_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Datetime column name.",
+                            "title": "Datetime Column"
+                        },
+                        "horizon_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Horizon/id column name.",
+                            "title": "Horizon Column"
+                        },
+                        "max_horizon": {
+                            "anyOf": [
+                                {
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Optional maximum horizon.",
+                            "title": "Max Horizon"
+                        },
+                        "stages": {
+                            "anyOf": [
+                                {
+                                    "items": {
+                                        "type": "object"
+                                    },
+                                    "type": "array"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Optional nested staged inference for this entry (advanced).",
+                            "title": "Stages"
+                        }
+                    },
+                    "title": "ModelSpec",
+                    "type": "object"
+                }
+            },
+            "additionalProperties": true,
+            "properties": {
+                "pvout_model": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ModelSpec"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "PVOUT-side model bundle (add a single entry to this card). Per-field values can be Upstream-bound from `PVOUTErrorCorrectionModelTrainPiece` (`model_path`, `feature_columns`, `target_column`, \u2026). Typically `mode=pvout_correction` with `base_forecast_column=PVOUT`.",
+                    "title": "Pvout Model"
+                },
+                "price_model": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ModelSpec"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Price-side model bundle (add a single entry to this card). Per-field values can be Upstream-bound from `ElectricityPricePredictionModelTrainPiece`. Typically `mode=price_level` or `price_ahead`.",
+                    "title": "Price Model"
+                },
+                "datetime_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Datetime column name shared by both models (inherited into each slot when not set per-model).",
+                    "title": "Datetime Column"
+                },
+                "horizon_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Horizon/id column name shared by both models (inherited into each slot when not set per-model).",
+                    "title": "Horizon Column"
+                },
+                "max_horizon": {
+                    "anyOf": [
+                        {
+                            "type": "integer"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional maximum horizon shared by both models.",
+                    "title": "Max Horizon"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "$defs": {
+                "ForecastEntry": {
+                    "properties": {
+                        "model_id": {
+                            "description": "Identifier of the model that produced this forecast.",
+                            "title": "Model Id",
+                            "type": "string"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Source model checkpoint.",
+                            "title": "Model Path"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Inference mode used.",
+                            "title": "Mode"
+                        },
+                        "forecast_csv_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Path to forecast CSV for this model (consumable by EvaluateMLModel / aggregator).",
+                            "title": "Forecast Csv Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "description": "Path to the INPUT dataset used to generate this forecast \u2014 i.e. the data passed to `model.predict()`. Required by ExplainablePrediction so it can re-feed the same rows to SHAP / LIME from a single edge.",
+                            "title": "Data Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        }
+                    },
+                    "required": [
+                        "model_id"
+                    ],
+                    "title": "ForecastEntry",
+                    "type": "object"
+                }
+            },
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "forecasts": {
+                    "description": "Per-model forecast outputs. Length matches the number of input models.",
+                    "items": {
+                        "$ref": "#/$defs/ForecastEntry"
+                    },
+                    "title": "Forecasts",
+                    "type": "array"
+                },
+                "forecast_csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Back-compat scalar: path to the first entry in `forecasts`. Downstream nodes still wired to single-model inference keep working.",
+                    "title": "Forecast Csv Path"
+                },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Back-compat: echoed checkpoint path of the first model.",
+                    "title": "Model Path"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed input data path shared across models (when uniform).",
+                    "title": "Data Path"
+                },
+                "feature_columns": {
+                    "description": "Back-compat: feature columns of the first model.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Back-compat: target column of the first model.",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "`input_payload` on no-op; `per_model` mapping `{model_id: {forecast, per_horizon, metadata, debug?}}` plus aggregate `stage_summaries` when stages are used.",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/InferencePiece"
+    },
+    "ElectricityPricePredictionModelTrainPiece": {
+        "name": "ElectricityPricePredictionModelTrainPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_1.txt"
+        },
+        "tags": [
+            "Template",
+            "Train",
+            "ElectricityPrice",
+            "Prediction"
+        ],
+        "style": {
+            "node_label": "Train Electricity Price Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:chart-line",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for training an electricity price prediction model.",
+        "container_resources": {
+            "requests": {
+                "cpu": 200,
+                "memory": 256
+            },
+            "limits": {
+                "cpu": 1000,
+                "memory": 2048
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "model_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Training model type.",
+                    "title": "Model Type"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Input CSV path.",
+                    "title": "Data Path"
+                },
+                "csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Alias for input CSV path.",
+                    "title": "Csv Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns used for training (consumed from preprocessor/decider).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Target column name (defaults to `spot_price_eur_mwh`).",
+                    "title": "Target Column"
+                },
+                "checkpoint_dir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional checkpoint directory.",
+                    "title": "Checkpoint Dir"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "$defs": {
+                "ModelSpec": {
+                    "additionalProperties": true,
+                    "description": "Typed bundle that matches `InferencePiece.ModelSpec`.\n\nExposed as a single typed output so a downstream `InferencePiece.models[i]`\nentry can bind to one trainer in a single click. Defaults pick `price_level`\nmode (no baseline column) and the price target.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "preprocessing_metadata_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Preprocessing Metadata Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        },
+                        "base_forecast_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Base Forecast Column"
+                        }
+                    },
+                    "title": "ModelSpec",
+                    "type": "object"
+                }
+            },
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to saved model checkpoint (consumable upstream \u2192 inference.model_path).",
+                    "title": "Model Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns used at training time (consumable upstream \u2192 inference.feature_columns).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "spot_price_eur_mwh",
+                    "description": "Target column used at training time.",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "preprocessing_metadata_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to preprocessing_metadata.json (consumable upstream \u2192 inference.preprocessing_metadata_path).",
+                    "title": "Preprocessing Metadata Path"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed input data path (consumable upstream \u2192 inference / explainable).",
+                    "title": "Data Path"
+                },
+                "model_spec": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ModelSpec"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Single-element list mirroring `InferencePiece.price_model` so the entire bundle binds in one click (`InferencePiece.price_model \u2190 model_spec`). Defaults to `mode=price_level` and `target_column=spot_price_eur_mwh`.",
+                    "title": "Model Spec"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., trained model URI, training metrics).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/ElectricityPricePredictionModelTrainPiece"
+    },
+    "DataPreprocessingPiece": {
+        "name": "DataPreprocessingPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Data",
+            "Preprocessing"
+        ],
+        "style": {
+            "node_label": "Data Preprocessing",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:filter",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for cleaning, validating, and preprocessing input data prior to feature engineering or training.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "preprocessing_option": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "One of: `none`, `prediction`, `correction`.",
+                    "title": "Preprocessing Option"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Single-source input path (back-compat alias for `data_path_solargis`). Use the more specific `data_path_solargis` / `data_path_okte` fields below to merge Solargis + OKTE datasets into one preprocessed CSV.",
+                    "title": "Data Path"
+                },
+                "data_path_solargis": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to Solargis-style CSV (weather / PVOUT). Wire upstream from `SyntheticDataGeneratorPiece.File Path`.",
+                    "title": "Data Path Solargis"
+                },
+                "data_path_okte": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to OKTE-style CSV (electricity market). Wire upstream from `OKTEDataGeneratorPiece.File Path`. When both Solargis and OKTE paths are provided, the piece inner-joins them on `datetime` and emits one merged dataset with all features.",
+                    "title": "Data Path Okte"
+                },
+                "save_data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional output path.",
+                    "title": "Save Data Path"
+                },
+                "test_size": {
+                    "anyOf": [
+                        {
+                            "type": "number"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional split size.",
+                    "title": "Test Size"
+                },
+                "keep_datetime": {
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Keep datetime column if supported.",
+                    "title": "Keep Datetime"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Target column for prediction mode. Defaults to `PVOUT` (SolarGIS). Set to e.g. `spot_price_eur_mwh` for OKTE data.",
+                    "title": "Target Column"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to preprocessed CSV (consumable upstream \u2192 normalization / trainer / inference).",
+                    "title": "Data Path"
+                },
+                "feature_columns": {
+                    "description": "Resolved feature columns (consumable upstream \u2192 trainer / inference).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Target column used (consumable upstream \u2192 trainer).",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., cleaned dataset URI, dropped rows stats).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataPreprocessingPiece"
+    },
+    "DataNormalizationPiece": {
+        "name": "DataNormalizationPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Data",
+            "Normalization"
+        ],
+        "style": {
+            "node_label": "Data Normalization",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:scale-balanced",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for normalizing raw smart-grid data into a consistent scale and schema.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 512
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "normalization_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": "none",
+                    "description": "One of: `none`, `min_max`, `z_score`, `logaritmic`, `exponential`. Use `none` (passthrough) for tree-based models like XGBoost. Usually wired upstream from `ModelDeciderPiece.Normalization Type`.",
+                    "title": "Normalization Type"
+                },
+                "features": {
+                    "description": "Optional list of column names to normalize. Empty = apply to all numeric columns. Click `+` and add column names like `GHI`, `TEMP`, `WS`.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Features",
+                    "type": "array"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to input CSV. Wire upstream from `DataPreprocessingPiece.Data Path` (the preprocessor's `preprocessed.csv`).",
+                    "title": "Data Path"
+                },
+                "dataframe": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional inline dataframe payload (JSON object). Leave empty when `Data Path` is provided.",
+                    "title": "Dataframe"
+                },
+                "feature_columns": {
+                    "description": "Optional passthrough of feature columns from upstream. Echoed to downstream pieces so trainer/inference need only one upstream edge.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional passthrough of the target column from upstream. Echoed downstream.",
+                    "title": "Target Column"
+                },
+                "model_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional passthrough of the selected model type from upstream. Echoed downstream.",
+                    "title": "Model Type"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to normalized CSV (consumable upstream \u2192 trainer / inference).",
+                    "title": "Data Path"
+                },
+                "normalization_type": {
+                    "default": "none",
+                    "description": "Normalization type that was applied.",
+                    "title": "Normalization Type",
+                    "type": "string"
+                },
+                "features": {
+                    "description": "Feature columns that were normalized.",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Features",
+                    "type": "array"
+                },
+                "feature_columns": {
+                    "description": "Echoed feature columns from upstream (consumable upstream \u2192 trainer / inference).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Echoed target column from upstream (consumable upstream \u2192 trainer.target_column).",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "model_type": {
+                    "default": "xgb_regressor_model",
+                    "description": "Echoed selected model type from upstream (consumable upstream \u2192 trainer.model_type).",
+                    "title": "Model Type",
+                    "type": "string"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., normalized dataset URI, fitted scaler params).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/DataNormalizationPiece"
+    },
+    "PVOUTErrorCorrectionModelTrainPiece": {
+        "name": "PVOUTErrorCorrectionModelTrainPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_1.txt"
+        },
+        "tags": [
+            "Template",
+            "Train",
+            "PVOUT",
+            "ErrorCorrection"
+        ],
+        "style": {
+            "node_label": "Train PVOUT Error Correction Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:sliders",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for training a PVOUT error-correction model.",
+        "container_resources": {
+            "requests": {
+                "cpu": 200,
+                "memory": 256
+            },
+            "limits": {
+                "cpu": 1000,
+                "memory": 2048
+            }
+        },
+        "input_schema": {
+            "additionalProperties": true,
+            "properties": {
+                "model_type": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Training model type.",
+                    "title": "Model Type"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Input CSV path.",
+                    "title": "Data Path"
+                },
+                "csv_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Alias for input CSV path.",
+                    "title": "Csv Path"
+                },
+                "baseline_model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional path to an upstream baseline model checkpoint (e.g. `PVOUTPredictionModelTrainPiece.model_path`). When set, the baseline is used to generate the predicted-PVOUT column required by the XGB error-correction models, removing the need for an explicit inference step between the trainer and this piece.",
+                    "title": "Baseline Model Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns used for training (also for baseline inference).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Target column name (defaults to `PVOUT`).",
+                    "title": "Target Column"
+                },
+                "checkpoint_dir": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Optional checkpoint directory.",
+                    "title": "Checkpoint Dir"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "$defs": {
+                "ModelSpec": {
+                    "additionalProperties": true,
+                    "description": "Typed bundle that matches `InferencePiece.ModelSpec`.\n\nExposed as a single typed output so a downstream `InferencePiece.models[i]`\nentry can bind to one trainer in a single click instead of toggling each\nfield separately. Defaults pick the residual-correction wiring.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "preprocessing_metadata_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Preprocessing Metadata Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        },
+                        "base_forecast_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Base Forecast Column"
+                        }
+                    },
+                    "title": "ModelSpec",
+                    "type": "object"
+                }
+            },
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to trained correction model checkpoint (consumable upstream \u2192 inference.model_path).",
+                    "title": "Model Path"
+                },
+                "feature_columns": {
+                    "description": "Feature columns used at training time (consumable upstream \u2192 inference.feature_columns).",
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Feature Columns",
+                    "type": "array"
+                },
+                "target_column": {
+                    "default": "PVOUT",
+                    "description": "Target column used at training time.",
+                    "title": "Target Column",
+                    "type": "string"
+                },
+                "data_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed input data path (consumable upstream \u2192 inference).",
+                    "title": "Data Path"
+                },
+                "preprocessing_metadata_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Path to preprocessing_metadata.json (consumable upstream \u2192 inference.preprocessing_metadata_path).",
+                    "title": "Preprocessing Metadata Path"
+                },
+                "baseline_model_path": {
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Echoed baseline model path (the upstream `model_path` consumed by this piece). Forwarded so staged inference can reach both checkpoints from a single edge.",
+                    "title": "Baseline Model Path"
+                },
+                "model_spec": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ModelSpec"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Single-element list mirroring `InferencePiece.pvout_model` so the entire bundle binds in one click (`InferencePiece.pvout_model \u2190 model_spec`). `model_path` points at the *correction* checkpoint, `mode=pvout_correction` with `base_forecast_column=PVOUT`.",
+                    "title": "Model Spec"
+                },
+                "artifacts": {
+                    "description": "Optional outputs (e.g., trained corrector URI, evaluation metrics).",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/PVOUTErrorCorrectionModelTrainPiece"
+    },
+    "EvaluateMLModelPiece": {
+        "name": "EvaluateMLModelPiece",
+        "dependency": {
+            "dockerfile": null,
+            "requirements_file": "requirements_0.txt"
+        },
+        "tags": [
+            "Template",
+            "Model",
+            "Evaluation"
+        ],
+        "style": {
+            "node_label": "Evaluate ML Model",
+            "node_type": "default",
+            "node_style": {
+                "backgroundColor": "#ebebeb"
+            },
+            "useIcon": true,
+            "icon_class_name": "fa-solid:clipboard-check",
+            "iconStyle": {
+                "cursor": "pointer"
+            }
+        },
+        "description": "Template piece for evaluating a trained ML model and producing metrics/artifacts.",
+        "container_resources": {
+            "requests": {
+                "cpu": 100,
+                "memory": 128
+            },
+            "limits": {
+                "cpu": 500,
+                "memory": 1024
+            }
+        },
+        "input_schema": {
+            "$defs": {
+                "ForecastBinding": {
+                    "additionalProperties": true,
+                    "description": "Structural mirror of `InferencePiece.OutputModel.forecasts[*]`.\n\nLets a single upstream edge `EvaluateMLModel.forecasts \u2190 Inference.forecasts`\nauto-populate per-model evaluations without manual per-entry wiring.",
+                    "properties": {
+                        "model_id": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Id"
+                        },
+                        "model_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Model Path"
+                        },
+                        "mode": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Mode"
+                        },
+                        "forecast_csv_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Forecast Csv Path"
+                        },
+                        "data_path": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Data Path"
+                        },
+                        "feature_columns": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "title": "Feature Columns",
+                            "type": "array"
+                        },
+                        "target_column": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "default": null,
+                            "title": "Target Column"
+                        }
+                    },
+                    "title": "ForecastBinding",
+                    "type": "object"
+                }
+            },
+            "additionalProperties": true,
+            "properties": {
+                "forecasts": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/ForecastBinding"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "description": "Per-model forecast entries \u2014 wire in one click from `InferencePiece.OutputModel.forecasts`. Drives evaluation: one metrics.json per forecast, with `pred_df_path` / `target_column` / `forecast_column` auto-derived from each entry (mode-aware: `correction` for `pvout_correction`, `final_forecast` otherwise).",
+                    "title": "Forecasts"
+                },
+                "evaluation_option": {
+                    "default": "normal",
+                    "description": "Evaluation mode: `normal` or `errorcorrection`.",
+                    "title": "Evaluation Option",
+                    "type": "string"
+                },
+                "baseline_id": {
+                    "default": 1,
+                    "description": "Baseline horizon id.",
+                    "title": "Baseline Id",
+                    "type": "integer"
+                },
+                "plot": {
+                    "default": false,
+                    "description": "Whether to generate plots/heatmaps.",
+                    "title": "Plot",
+                    "type": "boolean"
+                }
+            },
+            "title": "InputModel",
+            "type": "object"
+        },
+        "output_schema": {
+            "$defs": {
+                "MetricsEntry": {
+                    "properties": {
+                        "model_id": {
+                            "description": "Identifier for this evaluation entry.",
+                            "title": "Model Id",
+                            "type": "string"
+                        },
+                        "evaluation_option": {
+                            "description": "Evaluation mode used.",
+                            "title": "Evaluation Option",
+                            "type": "string"
+                        },
+                        "metrics_path": {
+                            "description": "Path to this entry's metrics JSON.",
+                            "title": "Metrics Path",
+                            "type": "string"
+                        },
+                        "metrics": {
+                            "description": "Computed metrics for this entry.",
+                            "title": "Metrics",
+                            "type": "object"
+                        }
+                    },
+                    "required": [
+                        "model_id",
+                        "evaluation_option",
+                        "metrics_path"
+                    ],
+                    "title": "MetricsEntry",
+                    "type": "object"
+                }
+            },
+            "properties": {
+                "message": {
+                    "description": "Human-readable status message.",
+                    "title": "Message",
+                    "type": "string"
+                },
+                "metrics": {
+                    "description": "Per-entry metrics. Length matches the number of evaluations.",
+                    "items": {
+                        "$ref": "#/$defs/MetricsEntry"
+                    },
+                    "title": "Metrics",
+                    "type": "array"
+                },
+                "artifacts": {
+                    "description": "`input_payload` on no-op. On run: aggregated `per_model = {model_id: metrics}` plus first-entry `metrics`, `metrics_path`, `evaluation_option` at top level for back-compat.",
+                    "title": "Artifacts",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "message"
+            ],
+            "title": "OutputModel",
+            "type": "object"
+        },
+        "secrets_schema": null,
+        "source_url": "https://github.com/IISAS/domino_smart_grid_pieces/tree/main/pieces/EvaluateMLModelPiece"
     }
 }

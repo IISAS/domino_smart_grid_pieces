@@ -5,10 +5,16 @@
 # DataPreprocessingPiece
 
 # DataNormalizationPiece
-ElectricityPricePredictionModelTrainPiece
+# DataPreprocessingPiece
+# ElectricityPricePredictionModelTrainPiece
 # EvaluateMLModelPiece
-ExplainablePredictionPiece
+# ExplainablePredictionPiece
+# ForecastAggregatorPiece
 # InferencePiece
 # ModelDeciderPiece
-PVOUTErrorCorrectionModelTrainPiece
+# OKTEDataGeneratorPiece
+# PVOUTErrorCorrectionModelTrainPiece
 # PVOUTPredictionModelTrainPiece
+# SolarGISDataGeneratorPiece
+# SyntheticDataGeneratorPiece
+# TestGpuSupprtPiece

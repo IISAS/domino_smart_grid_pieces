@@ -81,6 +81,8 @@ def preprocess_prediction(payload):
 
     df = _read_input_dataframe(payload)
     data_path = payload.get("data_path")
+    data_path_solargis = payload.get("data_path_solargis")
+    data_path_okte = payload.get("data_path_okte")
     save_data_path = payload.get("save_data_path")
     flag_each_day_enabled = bool(payload.get("flag_each_day", False))
     keep_datetime = bool(payload.get("keep_datetime", False))
@@ -97,40 +99,111 @@ def preprocess_prediction(payload):
                 candidate = pd.read_csv(path, **kwargs)
             except Exception:
                 continue
-            if "datetime" in candidate.columns or (
-                "Date" in candidate.columns and "Time" in candidate.columns
+            if (
+                "datetime" in candidate.columns
+                or ("Date" in candidate.columns and "Time" in candidate.columns)
+                or "timestamp_utc" in candidate.columns
             ):
                 return candidate
         raise ValueError(
             "Unable to read input CSV with supported schemas. "
-            "Expected either `datetime` or `Date`+`Time` columns."
+            "Expected a `datetime`, `timestamp_utc`, or `Date`+`Time` column."
         )
 
+    target_col_input = payload.get("target_column")
+    target_col = str(target_col_input) if target_col_input else "PVOUT"
+
+    # data_path is the back-compat alias for data_path_solargis.
+    solargis_path = data_path_solargis or data_path
+
     if df is None:
-        if not data_path:
+        if not solargis_path and not data_path_okte:
             raise ValueError(
-                "preprocessing_option='prediction' requires either `payload['dataframe']` "
-                "or `payload['data_path']`."
+                "preprocessing_option='prediction' requires `payload['dataframe']`, "
+                "or `payload['data_path']` / `data_path_solargis`, or "
+                "`payload['data_path_okte']` (or both Solargis + OKTE for the merged shape)."
             )
-        df = _read_supported_csv(data_path)
+
+        if solargis_path and data_path_okte:
+            # Dual-source: read both and inner-join on `datetime` so each row in the
+            # merged dataset has Solargis weather columns AND OKTE market columns.
+            solargis_df = _read_supported_csv(solargis_path)
+            solargis_df = ensure_datetime_column(solargis_df)
+
+            okte_df = _read_supported_csv(data_path_okte)
+            okte_df = ensure_datetime_column(okte_df)
+
+            # Drop Date/Time from OKTE side after datetime is derived, to avoid
+            # collisions when the Solargis side doesn't have them.
+            okte_drop = [
+                c for c in ("Date", "Time")
+                if c in okte_df.columns and c not in solargis_df.columns
+            ]
+            if okte_drop:
+                okte_df = okte_df.drop(columns=okte_drop)
+
+            df = pd.merge(
+                solargis_df,
+                okte_df,
+                on="datetime",
+                how="inner",
+                suffixes=("", "_okte"),
+            )
+            if df.empty:
+                raise ValueError(
+                    "Inner-join on `datetime` produced 0 rows. Check that the Solargis "
+                    "and OKTE generators emit overlapping timestamps "
+                    "(same `time_step_minutes` and `records_count`)."
+                )
+        elif solargis_path:
+            df = _read_supported_csv(solargis_path)
+        else:
+            df = _read_supported_csv(data_path_okte)
 
     data = df
     data = ensure_datetime_column(data)
     if flag_each_day_enabled:
         data = flag_each_day(data)
 
-    data = preprocess_solargis_data(data)
+    # SolarGIS-specific preprocessing only when the dataset has the expected columns.
+    if all(col in data.columns for col in ("GHI", "DIF", "SE")):
+        data = preprocess_solargis_data(data)
+    else:
+        data = data.dropna()
 
     if save_data_path:
         os.makedirs(os.path.dirname(save_data_path), exist_ok=True)
         data.to_csv(save_data_path, index=False)
 
-    features = _resolve_features(payload, data, target_columns=["PVOUT"])
+    if target_col not in data.columns:
+        if target_col_input is not None:
+            raise ValueError(
+                f"Target column `{target_col}` not found in data. "
+                f"Available columns: {list(data.columns)}. "
+                "Pass `target_column` in piece input to match your dataset."
+            )
+        # Default PVOUT not found — dataset has no standard target (e.g. OKTE).
+        # Return only X so downstream normalization/inference pieces still work.
+        features = _resolve_features(payload, data, target_columns=[])
+        if keep_datetime and "datetime" in data.columns and "datetime" not in features:
+            features = ["datetime"] + features
+        X = data[features]
+        return {
+            "message": "DataPreprocessingPiece executed (prediction, no target column).",
+            "artifacts": {
+                "X": to_jsonable_df(X),
+                "y": {},
+                "features": features,
+                "target_column": None,
+            },
+        }
+
+    features = _resolve_features(payload, data, target_columns=[target_col])
     if keep_datetime and "datetime" in data.columns and "datetime" not in features:
         features = ["datetime"] + features
 
     X = data[features]
-    y = data["PVOUT"]
+    y = data[target_col]
 
     return {
         "message": "DataPreprocessingPiece executed (prediction).",
@@ -138,6 +211,7 @@ def preprocess_prediction(payload):
             "X": to_jsonable_df(X),
             "y": to_jsonable_df(y.to_frame()),
             "features": features,
+            "target_column": target_col,
         },
     }
 

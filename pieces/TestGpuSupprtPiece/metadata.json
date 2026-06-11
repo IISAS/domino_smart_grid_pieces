@@ -1,0 +1,27 @@
+{
+  "name": "TestGpuSupprtPiece",
+  "description": "Piece that starts PyTorch in a GPU container and reports CUDA devices and a small GPU matmul probe.",
+  "dependency": {
+    "dockerfile": "Dockerfile.pytorch-gpu"
+  },
+  "container_resources": {
+    "requests": {
+      "cpu": 100,
+      "memory": 512
+    },
+    "limits": {
+      "cpu": 500,
+      "memory": 2048
+    },
+    "use_gpu": true
+  },
+  "tags": [
+    "PyTorch",
+    "GPU",
+    "diagnostics"
+  ],
+  "style": {
+    "node_label": "Test PyTorch GPU",
+    "icon_class_name": "fa-duotone fa-solid fa-right-to-bracket"
+  }
+}

@@ -37,6 +37,24 @@ class InputModel(BaseModel):
             "Leave empty when `Data Path` is provided."
         ),
     )
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        title="Feature Columns",
+        description=(
+            "Optional passthrough of feature columns from upstream. "
+            "Echoed to downstream pieces so trainer/inference need only one upstream edge."
+        ),
+    )
+    target_column: str | None = Field(
+        default=None,
+        title="Target Column",
+        description="Optional passthrough of the target column from upstream. Echoed downstream.",
+    )
+    model_type: str | None = Field(
+        default=None,
+        title="Model Type",
+        description="Optional passthrough of the selected model type from upstream. Echoed downstream.",
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -72,6 +90,18 @@ class OutputModel(BaseModel):
     features: list[str] = Field(
         default_factory=list,
         description="Feature columns that were normalized.",
+    )
+    feature_columns: list[str] = Field(
+        default_factory=list,
+        description="Echoed feature columns from upstream (consumable upstream → trainer / inference).",
+    )
+    target_column: str = Field(
+        default="PVOUT",
+        description="Echoed target column from upstream (consumable upstream → trainer.target_column).",
+    )
+    model_type: str = Field(
+        default="xgb_regressor_model",
+        description="Echoed selected model type from upstream (consumable upstream → trainer.model_type).",
     )
     artifacts: dict = Field(
         default_factory=dict,

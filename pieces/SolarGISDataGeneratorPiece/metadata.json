@@ -1,0 +1,26 @@
+{
+  "name": "SolarGISDataGeneratorPiece",
+  "description": "Generate synthetic SolarGIS solar radiation data (global horizontal irradiation, direct normal irradiation, diffuse horizontal irradiation) in batch or realtime-like mode.",
+  "dependency": {
+    "requirements_file": "requirements_1.txt"
+  },
+  "container_resources": {
+    "requests": {
+      "cpu": 100,
+      "memory": 128
+    },
+    "limits": {
+      "cpu": 500,
+      "memory": 512
+    }
+  },
+  "tags": [
+    "SolarGIS",
+    "SyntheticData",
+    "Generator"
+    ],
+  "style": {
+    "node_label": "SolarGIS Data Generator",
+    "icon_class_name": "fa-solid:bolt"
+  }
+}

@@ -43,7 +43,7 @@ class DataPreprocessingPiece(BasePiece):
                 message=result["message"],
                 data_path=saved_path,
                 feature_columns=list(artifacts.get("features") or []),
-                target_column="PVOUT",
+                target_column=str(artifacts.get("target_column") or ""),
                 artifacts=artifacts,
             )
 

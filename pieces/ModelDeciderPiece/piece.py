@@ -28,11 +28,23 @@ class ModelDeciderPiece(BasePiece):
             normalization_type = "none" if model_type in TREE_MODELS else "z_score"
         normalization_type = str(normalization_type).lower()
 
+        # Strip the chosen target_column from feature_columns so downstream pieces
+        # never train with the target leaking in as a predictor. This matters when
+        # DataPreprocessing merges Solargis + OKTE into one dataset and two
+        # ModelDecider nodes (one per target) fan out from it — each must echo a
+        # feature list that excludes its own target.
+        target_column_resolved = str(payload.get("target_column") or "PVOUT")
+        raw_feature_columns = payload.get("feature_columns") or []
+        filtered_feature_columns = [
+            c for c in raw_feature_columns if c != target_column_resolved
+        ]
+
         decision = {
             "model_type": model_type,
             "normalization_type": normalization_type,
-            "feature_columns": payload.get("feature_columns"),
-            "target_column": payload.get("target_column", "PVOUT"),
+            "feature_columns": filtered_feature_columns,
+            "target_column": target_column_resolved,
+            "data_path": payload.get("data_path"),
             "problem_type": payload.get("problem_type"),
             "horizon": payload.get("horizon"),
         }
@@ -52,6 +64,7 @@ class ModelDeciderPiece(BasePiece):
             normalization_type=normalization_type,
             feature_columns=list(decision.get("feature_columns") or []),
             target_column=str(decision.get("target_column") or "PVOUT"),
+            data_path=decision.get("data_path"),
             decision_path=decision_path,
             artifacts=artifacts,
         )
