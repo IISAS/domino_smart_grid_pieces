@@ -93,6 +93,7 @@ def test_inference_piece_pvout_correction_stub_model(monkeypatch, tmp_path: Path
                         "model_path": dummy_model_path,
                         "feature_columns": ["f1", "f2"],
                         "base_forecast_column": "PVOUT",
+                        "target_column": "PVOUT",
                     }
                 ],
             }
